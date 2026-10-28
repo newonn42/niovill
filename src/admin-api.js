@@ -5,6 +5,7 @@ import {
 } from './auth.js';
 import { isFull } from './home.js';
 import { ROOM_TYPES, PERIODS } from './apply-api.js';
+import { TOKEN_RE, tgCall, getSetting, setSetting, getChats, sendToAll } from './telegram.js';
 
 const KEEP_DAYS = 90; // 완료 후 보관 기간
 
@@ -55,6 +56,15 @@ async function me(env, request) {
   if (n === 0) return json({ ok: true, needSetup: true, admin: null });
   const admin = await currentAdmin(env.DB, request);
   if (!admin) return json({ ok: true, needSetup: false, admin: null });
+  // 관리자가 쓰는 주소를 기억해 알림 링크에 사용 (로그인한 관리자 요청만 믿음)
+  try {
+    const url = new URL(request.url);
+    const fh = request.headers.get('X-Forwarded-Host');
+    const origin = fh && /^[a-z0-9.-]+(:\d+)?$/i.test(fh) ? url.protocol + '//' + fh : url.origin;
+    if ((await getSetting(env.DB, 'site_url')) !== origin) await setSetting(env.DB, 'site_url', origin, admin.name);
+  } catch (e) {
+    console.log('site_url save failed:', e && e.message);
+  }
   return json({ ok: true, needSetup: false, admin: { name: admin.name, username: admin.username }, newCount: await newCount(env) });
 }
 
@@ -195,6 +205,70 @@ async function newCount(env) {
   return r ? r.n : 0;
 }
 
+/* ── 로그인 후: 텔레그램 알림 ── */
+
+async function tgGet(env) {
+  const token = await getSetting(env.DB, 'tg_token');
+  const botName = await getSetting(env.DB, 'tg_bot');
+  return json({ ok: true, connected: !!token, bot: botName || '', chats: await getChats(env.DB) });
+}
+
+async function tgToken(env, admin, body) {
+  const token = typeof body.token === 'string' ? body.token.trim() : '';
+  if (!TOKEN_RE.test(token)) return fail('토큰 형식이 맞지 않습니다. BotFather가 준 토큰 전체를 붙여 넣어 주세요');
+  let me;
+  try {
+    me = await tgCall(env, token, 'getMe');
+  } catch (e) {
+    return fail('텔레그램에서 토큰을 확인하지 못했습니다. 토큰을 다시 확인해 주세요');
+  }
+  await setSetting(env.DB, 'tg_token', token, admin.name);
+  await setSetting(env.DB, 'tg_bot', me.username || '', admin.name);
+  await setSetting(env.DB, 'tg_chats', '[]', admin.name);
+  return json({ ok: true, bot: me.username || '' });
+}
+
+async function tgFind(env, admin) {
+  const token = await getSetting(env.DB, 'tg_token');
+  if (!token) return fail('먼저 봇 토큰을 저장해 주세요');
+  let updates;
+  try {
+    updates = await tgCall(env, token, 'getUpdates', { limit: 100, allowed_updates: ['message', 'my_chat_member'] });
+  } catch (e) {
+    return fail('텔레그램에서 대화를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요');
+  }
+  const chats = await getChats(env.DB);
+  const seen = new Set(chats.map((c) => String(c.id)));
+  for (const u of updates || []) {
+    const chat = (u.message && u.message.chat) || (u.my_chat_member && u.my_chat_member.chat);
+    if (!chat || seen.has(String(chat.id))) continue;
+    const name = chat.title || [chat.first_name, chat.last_name].filter(Boolean).join(' ') || chat.username || String(chat.id);
+    chats.push({ id: chat.id, name: String(name).slice(0, 40) });
+    seen.add(String(chat.id));
+  }
+  if (chats.length > 10) chats.length = 10;
+  await setSetting(env.DB, 'tg_chats', JSON.stringify(chats), admin.name);
+  return json({ ok: true, chats });
+}
+
+async function tgRemove(env, admin, body) {
+  const chats = (await getChats(env.DB)).filter((c) => String(c.id) !== String(body.id));
+  await setSetting(env.DB, 'tg_chats', JSON.stringify(chats), admin.name);
+  return json({ ok: true, chats });
+}
+
+async function tgTest(env, admin) {
+  const r = await sendToAll(env, '✅ 알림 테스트입니다. 새 상담 신청이 오면 이렇게 알려 드립니다. (' + admin.name + ' 님이 보냄)');
+  if (r.skipped) return fail('토큰과 받는 사람을 먼저 설정해 주세요');
+  if (!r.sent) return fail('보내지 못했습니다. 받는 사람이 봇을 차단했는지 확인해 주세요');
+  return json({ ok: true, sent: r.sent, failed: r.failed });
+}
+
+async function tgOff(env, admin) {
+  for (const k of ['tg_token', 'tg_bot', 'tg_chats']) await setSetting(env.DB, k, null, admin.name);
+  return json({ ok: true });
+}
+
 /* ── 로그인 후: 관리자 계정 ── */
 
 async function adminsGet(env, admin) {
@@ -265,6 +339,11 @@ export async function handleAdminApi(request, env, path) {
       if (path === 'status') return await statusSet(env, admin, body);
       if (path === 'inquiries/update') return await inquiryUpdate(env, admin, body);
       if (path === 'inquiries/delete') return await inquiryDelete(env, body);
+      if (path === 'telegram/token') return await tgToken(env, admin, body);
+      if (path === 'telegram/find') return await tgFind(env, admin);
+      if (path === 'telegram/remove') return await tgRemove(env, admin, body);
+      if (path === 'telegram/test') return await tgTest(env, admin);
+      if (path === 'telegram/off') return await tgOff(env, admin);
       if (path === 'admins/add') return await adminsAdd(env, admin, body);
       if (path === 'admins/delete') return await adminsDelete(env, admin, body);
       if (path === 'password') return await passwordChange(env, request, admin, body);
@@ -276,6 +355,7 @@ export async function handleAdminApi(request, env, path) {
       if (!admin) return fail('다시 로그인해 주세요', 401);
       if (path === 'status') return await statusGet(env);
       if (path === 'inquiries') return await inquiriesGet(env, url);
+      if (path === 'telegram') return await tgGet(env);
       if (path === 'admins') return await adminsGet(env, admin);
     }
     return fail('없는 기능입니다', 404);

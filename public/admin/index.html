@@ -56,7 +56,7 @@
     <nav class="a-tabs" role="tablist">
       <button type="button" role="tab" data-tab="inbox" aria-selected="true">신청함 <span class="a-badge" id="newBadge" hidden></span></button>
       <button type="button" role="tab" data-tab="status" aria-selected="false">모집 상태</button>
-      <button type="button" role="tab" data-tab="settings" aria-selected="false">계정</button>
+      <button type="button" role="tab" data-tab="settings" aria-selected="false">설정</button>
     </nav>
 
     <!-- 신청함 탭 -->
@@ -86,8 +86,41 @@
       </section>
     </div>
 
-    <!-- 계정 탭 -->
+    <!-- 설정 탭 -->
     <div id="tabSettings" hidden>
+      <section class="a-card" id="tgCard">
+        <h2>텔레그램 알림 <span class="a-state" id="tgState"></span></h2>
+
+        <div id="tgSetup">
+          <ol class="a-steps">
+            <li>텔레그램에서 <b>@BotFather</b>를 찾아 대화를 시작합니다</li>
+            <li><b>/newbot</b> 입력 → 봇 이름(예: 니오빌 알림) → 아이디(영문, 끝은 <b>bot</b>, 예: niovill_alarm_bot)</li>
+            <li>BotFather가 보내 준 <b>토큰</b>(숫자:영문 긴 글자)을 복사해 아래에 붙여 넣습니다</li>
+          </ol>
+          <form id="tgTokenForm" novalidate>
+            <div class="field"><label for="tgToken">봇 토큰</label><input id="tgToken" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="123456789:AA..."></div>
+            <p class="error" role="alert" hidden></p>
+            <button class="btn" type="submit">토큰 저장</button>
+          </form>
+        </div>
+
+        <div id="tgReady" hidden>
+          <p class="help">봇: <b id="tgBot"></b></p>
+          <ol class="a-steps">
+            <li>알림 받을 사람이 각자 텔레그램에서 <b id="tgBot2"></b>를 찾아 <b>시작(/start)</b>을 누릅니다</li>
+            <li>아래 <b>받는 사람 찾기</b>를 누릅니다</li>
+          </ol>
+          <ul class="a-list" id="tgChats"></ul>
+          <div class="btn-row">
+            <button type="button" class="btn ghost" id="tgFind">받는 사람 찾기</button>
+            <button type="button" class="btn ghost" id="tgTest">테스트 알림</button>
+          </div>
+          <p class="error" id="tgError" role="alert" hidden></p>
+          <p class="a-ok" id="tgOk" hidden></p>
+          <button type="button" class="a-danger" id="tgOff">알림 끄기 (토큰 삭제)</button>
+        </div>
+      </section>
+
       <section class="a-card">
         <h2>관리자 계정</h2>
         <ul class="a-list" id="adminList"></ul>

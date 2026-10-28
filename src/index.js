@@ -29,11 +29,11 @@ async function health(env) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (request.method === 'GET' && url.pathname === '/') return handleHome(request, env);
     if (request.method === 'GET' && url.pathname === '/api/health') return health(env);
-    if (url.pathname === '/api/apply') return handleApply(request, env);
+    if (url.pathname === '/api/apply') return handleApply(request, env, ctx);
     if (url.pathname.startsWith('/api/admin/')) return handleAdminApi(request, env, url.pathname.slice('/api/admin/'.length));
     if (url.pathname.startsWith('/api/')) return new Response('Not found', { status: 404 });
     return env.ASSETS.fetch(request);

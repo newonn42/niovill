@@ -1,5 +1,6 @@
 /* 손님 상담 신청 저장 (POST /api/apply) */
 import { isFull } from './home.js';
+import { sendToAll, inquiryText, getSetting } from './telegram.js';
 
 export const ROOM_TYPES = { any: '상관없음', premium: '프리미엄 외창', outer: '외창', inner: '내창' };
 export const PERIODS = { '': '', '1-2m': '1~2개월', '3-6m': '3~6개월', '6m+': '6개월 이상' };
@@ -22,7 +23,17 @@ function checkDate(d) {
   return !isNaN(t) && t.toISOString().slice(0, 10) === d ? d : null;
 }
 
-export async function handleApply(request, env) {
+// 저장이 끝난 뒤 알림 (알림이 실패해도 접수에는 영향 없음)
+// 신청함 주소는 관리자가 실제로 쓰는 주소(로그인 때 기록)를 씁니다. 손님 요청의 헤더는 믿지 않습니다.
+function notify(ctx, env, request, inq) {
+  const job = (async () => {
+    const site = (await getSetting(env.DB, 'site_url')) || new URL(request.url).origin;
+    await sendToAll(env, inquiryText(inq, { roomTypes: ROOM_TYPES, periods: PERIODS }, site + '/admin/'));
+  })().catch((e) => console.log('notify failed:', e && e.message));
+  if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(job);
+}
+
+export async function handleApply(request, env, ctx) {
   if (request.method !== 'POST') return fail('잘못된 요청입니다', 405);
   if (!env.DB) return fail('지금은 접수할 수 없습니다. 카톡 또는 전화로 문의해 주세요', 503);
   let body;
@@ -71,6 +82,7 @@ export async function handleApply(request, env) {
         )
         .bind(name, roomType, roomType, moveDate || null, period || null, merged || null, recent.id)
         .run();
+      notify(ctx, env, request, { name, phone, room_type: roomType, move_date: moveDate, period, message, was_full: full, merged: true });
       return json({ ok: true, id: recent.id, merged: true });
     }
 
@@ -81,6 +93,7 @@ export async function handleApply(request, env) {
       .prepare('INSERT INTO inquiries (name, phone, room_type, move_date, period, message, was_full) VALUES (?, ?, ?, ?, ?, ?, ?)')
       .bind(name, phone, roomType, moveDate || null, period || null, message || null, full ? 1 : 0)
       .run();
+    notify(ctx, env, request, { name, phone, room_type: roomType, move_date: moveDate, period, message, was_full: full });
     return json({ ok: true, id: res.meta ? res.meta.last_row_id : null });
   } catch (e) {
     console.log('apply save failed:', e && e.message);

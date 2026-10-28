@@ -87,7 +87,7 @@
     $('tabStatus').hidden = name !== 'status';
     if (name === 'inbox') loadInbox(currentFilter);
     $('tabSettings').hidden = name !== 'settings';
-    if (name === 'settings') loadAdmins();
+    if (name === 'settings') { loadAdmins(); loadTg(); }
     window.scrollTo(0, 0);
   }
   for (var t = 0; t < tabs.length; t++) {
@@ -240,6 +240,87 @@
     card.appendChild(foot);
     return card;
   }
+
+  /* ── 텔레그램 알림 ── */
+  function tgMsg(err, ok) {
+    $('tgError').textContent = err || ''; $('tgError').hidden = !err;
+    $('tgOk').textContent = ok || ''; $('tgOk').hidden = !ok;
+  }
+  function paintTg(r) {
+    var ready = r.connected && r.chats && r.chats.length;
+    $('tgState').textContent = ready ? '켜짐' : '꺼짐';
+    $('tgState').className = 'a-state ' + (ready ? 'on' : 'off');
+    $('tgSetup').hidden = !!r.connected;
+    $('tgReady').hidden = !r.connected;
+    $('tgBot').textContent = '@' + (r.bot || '');
+    $('tgBot2').textContent = '@' + (r.bot || '');
+    var ul = $('tgChats');
+    ul.textContent = '';
+    (r.chats || []).forEach(function (c) {
+      var li = el('li');
+      li.appendChild(el('span', '', '🔔 ' + c.name));
+      var x = el('button', 'a-small', '빼기');
+      x.type = 'button';
+      x.addEventListener('click', function () {
+        x.disabled = true;
+        api('telegram/remove', { id: c.id }).then(function (y) { if (needLogin(y)) return; loadTg(); });
+      });
+      li.appendChild(x);
+      ul.appendChild(li);
+    });
+    if (r.connected && !(r.chats || []).length) ul.appendChild(el('li', '', '아직 받는 사람이 없습니다'));
+  }
+  function loadTg() {
+    return api('telegram').then(function (r) {
+      if (needLogin(r)) return;
+      if (r.ok) paintTg(r);
+    });
+  }
+  $('tgTokenForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var f = this, btn = f.querySelector('button');
+    formMsg(f);
+    lock(btn, true);
+    api('telegram/token', { token: $('tgToken').value }).then(function (r) {
+      lock(btn, false);
+      if (needLogin(r)) return;
+      if (!r.ok) { formMsg(f, r.error); return; }
+      $('tgToken').value = '';
+      tgMsg('', '토큰을 저장했습니다. 이제 받을 사람이 봇에게 시작(/start)을 누른 뒤 "받는 사람 찾기"를 눌러 주세요.');
+      loadTg();
+    });
+  });
+  $('tgFind').addEventListener('click', function () {
+    var btn = this;
+    tgMsg();
+    lock(btn, true);
+    api('telegram/find', {}).then(function (r) {
+      lock(btn, false);
+      if (needLogin(r)) return;
+      if (!r.ok) { tgMsg(r.error); return; }
+      tgMsg('', r.chats.length ? '받는 사람 ' + r.chats.length + '명을 찾았습니다. 테스트 알림으로 확인해 보세요.' : '아직 찾지 못했습니다. 봇에게 시작(/start)을 누른 뒤 다시 눌러 주세요.');
+      loadTg();
+    });
+  });
+  $('tgTest').addEventListener('click', function () {
+    var btn = this;
+    tgMsg();
+    lock(btn, true);
+    api('telegram/test', {}).then(function (r) {
+      lock(btn, false);
+      if (needLogin(r)) return;
+      if (!r.ok) { tgMsg(r.error); return; }
+      tgMsg('', r.sent + '명에게 보냈습니다' + (r.failed ? ' (' + r.failed + '명 실패)' : '') + '. 텔레그램을 확인해 주세요.');
+    });
+  });
+  var offArmed = false;
+  $('tgOff').addEventListener('click', function () {
+    var btn = this;
+    if (!offArmed) { offArmed = true; btn.textContent = '한 번 더 누르면 알림이 꺼집니다'; return; }
+    offArmed = false;
+    btn.textContent = '알림 끄기 (토큰 삭제)';
+    api('telegram/off', {}).then(function (r) { if (needLogin(r)) return; tgMsg(); loadTg(); });
+  });
 
   /* ── 계정 탭 ── */
   function loadAdmins() {
