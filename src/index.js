@@ -1,18 +1,17 @@
 /* 고시원 홈페이지 – Worker 입구
-   - "/"      : 홈 화면 (실제 공실 채움)
-   - "/api/health" : 설치 확인용 (데이터베이스 연결 · 등록된 방 수)
+   - "/"      : 홈 화면 (모집 중 / 만실 문구)
+   - "/api/health" : 설치 확인용 (데이터베이스 연결 · 만실 여부)
    - "/api/admin/..." : 관리자 기능 (화면은 public/admin)
    - 그 밖의 파일은 public 폴더에서 그대로 나갑니다 */
-import { handleHome, PAGE_HEADERS } from './home.js';
+import { handleHome, isFull, PAGE_HEADERS } from './home.js';
 import { handleAdminApi } from './admin-api.js';
 
 async function health(env) {
-  const body = { ok: true, db: false, rooms: 0 };
+  const body = { ok: true, db: false, full: false };
   try {
     if (env.DB) {
-      const row = await env.DB.prepare("SELECT COUNT(*) AS n FROM rooms WHERE status != 'hidden'").first();
+      body.full = await isFull(env.DB);
       body.db = true;
-      body.rooms = row ? row.n : 0;
     }
   } catch (e) {
     body.db = false;

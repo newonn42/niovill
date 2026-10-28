@@ -3,10 +3,7 @@ import {
   hashPassword, verifyPassword, createSession, currentAdmin, deleteSession,
   sessionCookie, clearCookie, lockKey, lockedMinutes, recordFail, clearFails
 } from './auth.js';
-import { TYPES, LABEL, loadView } from './home.js';
-
-const STATUS_LABEL = { occupied: '입실중', empty: '공실', soon: '입실예정', hidden: '숨김' };
-const MAX_ADD = 100;
+import { isFull } from './home.js';
 
 function json(body, status = 200, extraHeaders) {
   const h = new Headers({
@@ -43,52 +40,6 @@ function checkName(n) {
   n = str(n, 40);
   return n.length >= 1 && n.length <= 20 ? n : '';
 }
-function checkDate(d) {
-  if (!d) return '';
-  if (typeof d !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return null;
-  const t = new Date(d + 'T00:00:00Z');
-  return !isNaN(t) && t.toISOString().slice(0, 10) === d ? d : null;
-}
-function checkRoomNo(n) {
-  n = str(n, 20);
-  return n.length >= 1 && n.length <= 10 && !/[,<>"'`]/.test(n) ? n : '';
-}
-function shortDate(iso) {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
-  return m ? Number(m[2]) + '/' + Number(m[3]) : '';
-}
-
-// "601-618, 사무실, 701" → ['601', ..., '618', '사무실', '701']
-export function parseRoomList(text) {
-  const out = [];
-  for (const raw of String(text || '').split(/[,\n]+/)) {
-    const part = raw.trim();
-    if (!part) continue;
-    const m = /^(\d{1,6})\s*[-~]\s*(\d{1,6})$/.exec(part);
-    if (m) {
-      const a = Number(m[1]);
-      const b = Number(m[2]);
-      if (b < a) return { error: '범위가 거꾸로입니다: ' + part };
-      if (b - a + 1 > MAX_ADD) return { error: '한 번에 ' + MAX_ADD + '개까지 추가할 수 있습니다' };
-      for (let i = a; i <= b; i++) out.push(String(i));
-    } else {
-      const no = checkRoomNo(part);
-      if (!no) return { error: '호실 이름을 확인해 주세요: ' + part };
-      out.push(no);
-    }
-    if (out.length > MAX_ADD) return { error: '한 번에 ' + MAX_ADD + '개까지 추가할 수 있습니다' };
-  }
-  if (out.length === 0) return { error: '추가할 호실을 입력해 주세요' };
-  return { rooms: [...new Set(out)] };
-}
-
-async function log(db, admin, roomNo, action, detail) {
-  await db
-    .prepare('INSERT INTO room_log (room_no, action, detail, admin_name) VALUES (?, ?, ?, ?)')
-    .bind(roomNo, action, detail || '', admin.name)
-    .run();
-}
-
 async function adminCount(db) {
   const r = await db.prepare('SELECT COUNT(*) AS n FROM admins').first();
   return r ? r.n : 0;
@@ -148,114 +99,26 @@ async function logout(env, request) {
   return json({ ok: true }, 200, { 'Set-Cookie': clearCookie(request) });
 }
 
-/* ── 로그인 후: 방 ── */
+/* ── 로그인 후: 모집 중 / 만실 스위치 ── */
 
-async function roomsGet(env) {
-  const { results } = await env.DB
-    .prepare("SELECT no, type, status, avail_date FROM rooms ORDER BY (no GLOB '[0-9]*') DESC, CAST(no AS INTEGER), no")
-    .all();
-  let preview = null;
-  try {
-    const v = await loadView(env.DB);
-    preview = {
-      full: v.full,
-      total: v.total,
-      byType: TYPES.map((t) => LABEL[t] + ' ' + v.empty[t]).join(' · '),
-      soonText: v.soonText
-    };
-  } catch (e) {
-    preview = null; // 보이는 방이 없음
-  }
+async function statusGet(env) {
+  const full = await isFull(env.DB);
   const last = await env.DB
-    .prepare("SELECT admin_name, strftime('%m/%d %H:%M', at, '+9 hours') AS at FROM room_log ORDER BY id DESC LIMIT 1")
+    .prepare("SELECT updated_by, strftime('%m/%d %H:%M', updated_at, '+9 hours') AS at FROM settings WHERE key = 'full'")
     .first();
-  const today = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
-  return json({
-    ok: true,
-    today,
-    types: TYPES.map((t) => ({ key: t, label: LABEL[t] })),
-    rooms: results || [],
-    preview,
-    last: last || null
-  });
+  return json({ ok: true, full, last: last || null });
 }
 
-async function roomStatus(env, admin, body) {
-  const no = checkRoomNo(body.no);
-  const status = body.status;
-  if (!no) return fail('호실을 확인해 주세요');
-  if (!['occupied', 'empty', 'soon'].includes(status)) return fail('상태를 확인해 주세요');
-  let date = status === 'soon' ? checkDate(body.avail_date) : '';
-  if (date === null) return fail('날짜를 확인해 주세요');
-  const res = await env.DB
-    .prepare("UPDATE rooms SET status = ?, avail_date = ?, updated_at = datetime('now') WHERE no = ?")
-    .bind(status, date || null, no)
-    .run();
-  if (!res.meta || res.meta.changes !== 1) return fail('없는 호실입니다', 404);
-  const detail = STATUS_LABEL[status] + (date ? ' ' + shortDate(date) : '');
-  await log(env.DB, admin, no, 'status', detail);
-  return json({ ok: true });
-}
-
-async function roomsAdd(env, admin, body) {
-  const parsed = parseRoomList(body.text);
-  if (parsed.error) return fail(parsed.error);
-  const type = TYPES.includes(body.type) ? body.type : '';
-  if (!type) return fail('방 타입을 골라 주세요');
-  const status = body.hidden ? 'hidden' : 'occupied';
-  const maxRow = await env.DB.prepare('SELECT COALESCE(MAX(sort), 0) AS m FROM rooms').first();
-  let sort = maxRow ? maxRow.m : 0;
-  const stmts = parsed.rooms.map((no) => {
-    sort += 1;
-    return env.DB
-      .prepare('INSERT OR IGNORE INTO rooms (no, type, status, sort) VALUES (?, ?, ?, ?)')
-      .bind(no, type, status, sort);
-  });
-  const results = await env.DB.batch(stmts);
-  const added = [];
-  results.forEach((r, i) => { if (r.meta && r.meta.changes === 1) added.push(parsed.rooms[i]); });
-  const skipped = parsed.rooms.filter((n) => !added.includes(n));
-  if (added.length) {
-    const label = added.length > 3 ? added[0] + '~' + added[added.length - 1] + ' (' + added.length + '실)' : added.join(', ');
-    await log(env.DB, admin, label, 'add', LABEL[type] + (body.hidden ? ' · 숨김' : ''));
-  }
-  return json({ ok: true, added, skipped });
-}
-
-async function roomEdit(env, admin, body) {
-  const no = checkRoomNo(body.no);
-  if (!no) return fail('호실을 확인해 주세요');
-  const room = await env.DB.prepare('SELECT type, status FROM rooms WHERE no = ?').bind(no).first();
-  if (!room) return fail('없는 호실입니다', 404);
-  const type = TYPES.includes(body.type) ? body.type : room.type;
-  let status = room.status;
-  if (body.hidden === true) status = 'hidden';
-  if (body.hidden === false && room.status === 'hidden') status = 'occupied';
+async function statusSet(env, admin, body) {
+  if (typeof body.full !== 'boolean') return fail('상태를 확인해 주세요');
   await env.DB
-    .prepare("UPDATE rooms SET type = ?, status = ?, avail_date = CASE WHEN ? = 'soon' THEN avail_date ELSE NULL END, updated_at = datetime('now') WHERE no = ?")
-    .bind(type, status, status, no)
+    .prepare(
+      "INSERT INTO settings (key, value, updated_by, updated_at) VALUES ('full', ?, ?, datetime('now')) " +
+        "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_by = excluded.updated_by, updated_at = excluded.updated_at"
+    )
+    .bind(body.full ? '1' : '0', admin.name)
     .run();
-  const parts = [];
-  if (type !== room.type) parts.push('타입 ' + LABEL[type]);
-  if (status !== room.status) parts.push(status === 'hidden' ? '숨김' : '숨김 해제');
-  if (parts.length) await log(env.DB, admin, no, 'edit', parts.join(' · '));
   return json({ ok: true });
-}
-
-async function roomDelete(env, admin, body) {
-  const no = checkRoomNo(body.no);
-  if (!no) return fail('호실을 확인해 주세요');
-  const res = await env.DB.prepare('DELETE FROM rooms WHERE no = ?').bind(no).run();
-  if (!res.meta || res.meta.changes !== 1) return fail('없는 호실입니다', 404);
-  await log(env.DB, admin, no, 'delete', '삭제');
-  return json({ ok: true });
-}
-
-async function logGet(env) {
-  const { results } = await env.DB
-    .prepare("SELECT room_no, action, detail, admin_name, strftime('%m/%d %H:%M', at, '+9 hours') AS at FROM room_log ORDER BY id DESC LIMIT 30")
-    .all();
-  return json({ ok: true, log: results || [] });
 }
 
 /* ── 로그인 후: 관리자 계정 ── */
@@ -324,10 +187,7 @@ export async function handleAdminApi(request, env, path) {
 
       const admin = await currentAdmin(env.DB, request);
       if (!admin) return fail('다시 로그인해 주세요', 401);
-      if (path === 'rooms/status') return await roomStatus(env, admin, body);
-      if (path === 'rooms/add') return await roomsAdd(env, admin, body);
-      if (path === 'rooms/edit') return await roomEdit(env, admin, body);
-      if (path === 'rooms/delete') return await roomDelete(env, admin, body);
+      if (path === 'status') return await statusSet(env, admin, body);
       if (path === 'admins/add') return await adminsAdd(env, admin, body);
       if (path === 'admins/delete') return await adminsDelete(env, admin, body);
       if (path === 'password') return await passwordChange(env, request, admin, body);
@@ -337,8 +197,7 @@ export async function handleAdminApi(request, env, path) {
     if (request.method === 'GET') {
       const admin = await currentAdmin(env.DB, request);
       if (!admin) return fail('다시 로그인해 주세요', 401);
-      if (path === 'rooms') return await roomsGet(env);
-      if (path === 'log') return await logGet(env);
+      if (path === 'status') return await statusGet(env);
       if (path === 'admins') return await adminsGet(env, admin);
     }
     return fail('없는 기능입니다', 404);
