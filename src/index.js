@@ -1,0 +1,36 @@
+/* 고시원 홈페이지 – Worker 입구
+   - "/"      : 홈 화면 (실제 공실 채움)
+   - "/api/health" : 설치 확인용 (데이터베이스 연결 · 등록된 방 수)
+   - 그 밖의 파일은 public 폴더에서 그대로 나갑니다 */
+import { handleHome, PAGE_HEADERS } from './home.js';
+
+async function health(env) {
+  const body = { ok: true, db: false, rooms: 0 };
+  try {
+    if (env.DB) {
+      const row = await env.DB.prepare("SELECT COUNT(*) AS n FROM rooms WHERE status != 'hidden'").first();
+      body.db = true;
+      body.rooms = row ? row.n : 0;
+    }
+  } catch (e) {
+    body.db = false;
+    body.error = 'database not ready';
+  }
+  return new Response(JSON.stringify(body), {
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store',
+      'X-Robots-Tag': PAGE_HEADERS['X-Robots-Tag']
+    }
+  });
+}
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    if (request.method === 'GET' && url.pathname === '/') return handleHome(request, env);
+    if (request.method === 'GET' && url.pathname === '/api/health') return health(env);
+    if (url.pathname.startsWith('/api/')) return new Response('Not found', { status: 404 });
+    return env.ASSETS.fetch(request);
+  }
+};

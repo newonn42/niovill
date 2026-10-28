@@ -1,0 +1,218 @@
+/* 니오빌 원룸텔 – 공통 스타일 */
+:root {
+  --bg: #F4F5F2;
+  --card: #FFFFFF;
+  --ink: #1B2220;
+  --ink-2: #3B4541;
+  --muted: #4F5A56;
+  --line: #DCE0DB;
+  --line-2: #C3C9C5;
+  --green: #1E6A4C;
+  --green-dark: #154D37;
+  --green-bg: #E6F0EB;
+  --amber: #7A4510;
+  --amber-dot: #B5651D;
+  --amber-bg: #FBEEDB;
+  --red: #A8322B;
+  --red-ink: #8E2A24;
+  --red-bg: #F6E3E1;
+  --gray-bg: #ECEEEB;
+  --ph: #D5DAD6;
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+  line-height: 1.5;
+}
+a { color: var(--green); }
+a:hover { color: var(--green-dark); }
+img { max-width: 100%; display: block; }
+
+.wrap {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  padding-bottom: 84px; /* 하단 고정 버튼 공간 */
+}
+
+/* 상단 */
+.top {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 20px; background: var(--card); border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; flex-direction: column; gap: 2px; text-decoration: none; color: var(--ink); }
+.brand b { font-size: 19px; font-weight: 800; letter-spacing: -0.3px; }
+.brand small { font-size: 12px; color: var(--muted); }
+.chip-link {
+  font-size: 14px; font-weight: 700; text-decoration: none; padding: 10px 14px;
+  border-radius: 10px; background: var(--green-bg); color: var(--green);
+}
+.chip-link.is-full { background: var(--red-bg); color: var(--red-ink); }
+
+.hero {
+  height: 230px; background: #C9CFCB; display: flex; align-items: center; justify-content: center;
+  color: var(--ink-2); font-size: 14px; overflow: hidden;
+}
+.hero img { width: 100%; height: 100%; object-fit: cover; }
+
+/* 공실 카드 */
+.status {
+  margin: -36px 16px 0; position: relative; background: var(--card); border-radius: 16px; padding: 20px;
+  box-shadow: 0 4px 16px rgba(27, 34, 32, 0.08); display: flex; flex-direction: column; gap: 14px;
+}
+.status-head { display: flex; align-items: center; gap: 10px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; background: var(--green); flex: none; }
+.dot.red { background: var(--red); }
+.status-title { font-size: 20px; font-weight: 800; margin: 0; }
+.status-desc { font-size: 15px; color: var(--ink-2); margin: 0; }
+.counts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.count { background: var(--bg); border-radius: 10px; padding: 10px 4px; text-align: center; color: var(--muted); }
+.count span { display: block; font-size: 12px; }
+.count strong { font-size: 18px; font-weight: 800; }
+.count.on { background: var(--green-bg); color: var(--green); }
+.soon {
+  display: flex; align-items: center; gap: 8px; background: var(--amber-bg); color: var(--amber);
+  border-radius: 10px; padding: 10px 12px; font-size: 14px; font-weight: 500;
+}
+.soon::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--amber-dot); flex: none; }
+.btn-row { display: flex; gap: 8px; }
+.btn {
+  flex: 1; display: block; text-align: center; text-decoration: none; font-weight: 700; font-size: 16px;
+  padding: 14px 0; border-radius: 12px; border: 1.5px solid var(--green); background: var(--green); color: #FFFFFF;
+  font-family: inherit; cursor: pointer;
+}
+.btn:hover { color: #FFFFFF; background: var(--green-dark); }
+.btn.ghost { background: var(--card); color: var(--green); }
+.btn.ghost:hover { background: var(--green-bg); color: var(--green); }
+.fine { font-size: 12px; color: var(--muted); text-align: center; margin: 0; }
+
+/* 섹션 */
+.section { padding: 28px 16px 4px; display: flex; flex-direction: column; gap: 12px; }
+.section h2 { margin: 0; font-size: 20px; font-weight: 800; }
+
+.room {
+  background: var(--card); border-radius: 14px; overflow: hidden; border: 1px solid var(--line);
+}
+.room-photo {
+  height: 170px; background: var(--ph); display: flex; align-items: center; justify-content: center;
+  color: var(--ink-2); font-size: 13px; overflow: hidden;
+}
+.room-photo img { width: 100%; height: 100%; object-fit: cover; }
+.room-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
+.room-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.room-name { font-size: 17px; font-weight: 800; margin: 0; }
+.badge { font-size: 12px; font-weight: 700; padding: 4px 9px; border-radius: 999px; background: var(--gray-bg); color: var(--muted); white-space: nowrap; }
+.badge.on { background: var(--green-bg); color: var(--green); }
+.badge.soon-b { background: var(--amber-bg); color: var(--amber); }
+.price { font-size: 15px; font-weight: 700; color: var(--green); margin: 0; }
+.feat { font-size: 14px; color: var(--muted); margin: 0; }
+
+.info { background: var(--card); border-radius: 14px; border: 1px solid var(--line); padding: 4px 16px; margin: 0; }
+.info div { display: flex; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid #ECEEEB; font-size: 14px; }
+.info div:last-child { border-bottom: 0; }
+.info dt { color: var(--muted); }
+.info dd { margin: 0; font-weight: 700; text-align: right; }
+
+.faq { background: var(--card); border-radius: 12px; border: 1px solid var(--line); }
+.faq button {
+  width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 12px; background: none; border: 0;
+  padding: 14px 16px; font-family: inherit; font-size: 15px; font-weight: 700; color: var(--ink); text-align: left;
+  cursor: pointer; min-height: 48px;
+}
+.faq button::after { content: '+'; color: var(--muted); font-size: 18px; }
+.faq button[aria-expanded="true"]::after { content: '−'; }
+.faq p { margin: 0; padding: 0 16px 14px; font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+.map {
+  height: 180px; border-radius: 14px; background: var(--ph); display: flex; align-items: center; justify-content: center;
+  color: var(--ink-2); font-size: 13px;
+}
+.addr { font-size: 14px; margin: 0; line-height: 1.6; }
+
+.foot { padding: 28px 20px 24px; font-size: 12px; color: var(--muted); line-height: 1.7; }
+.foot a { color: var(--muted); }
+
+/* 하단 고정 연락 버튼 */
+.contact {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+  background: var(--card); border-top: 1px solid var(--line);
+}
+.contact-inner {
+  max-width: 480px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;
+  padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
+}
+.contact a {
+  display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 0; min-height: 52px;
+  text-decoration: none; color: var(--ink); font-size: 13px; font-weight: 700;
+}
+.contact svg { width: 22px; height: 22px; }
+
+/* 만실 상태 */
+.full-only { display: none; }
+body.is-full .full-only { display: block; }
+body.is-full .status.full-only { display: flex; }
+body.is-full .open-only { display: none; }
+
+/* 신청서 */
+.page-head {
+  display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: var(--card); border-bottom: 1px solid var(--line);
+}
+.back { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 10px; }
+.page-head h1 { font-size: 18px; font-weight: 800; margin: 0; }
+.form { padding: 20px 16px 28px; display: flex; flex-direction: column; gap: 18px; }
+.form fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.form legend { font-size: 14px; font-weight: 700; padding: 0 0 8px; }
+.kinds { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.kinds label { position: relative; }
+.kinds input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.kinds span {
+  display: flex; align-items: center; justify-content: center; min-height: 48px; border-radius: 12px;
+  border: 1.5px solid var(--line-2); background: var(--card); font-size: 15px; font-weight: 700; cursor: pointer;
+}
+.kinds input:checked + span { background: var(--green); border-color: var(--green); color: #FFFFFF; }
+.kinds input:focus-visible + span { outline: 3px solid #7FC4A4; outline-offset: 2px; }
+.help { font-size: 13px; color: var(--muted); margin: 0; }
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 14px; font-weight: 700; }
+.field .req { color: var(--red); }
+.field .opt { font-weight: 400; color: var(--muted); }
+.field input, .field select, .field textarea {
+  min-height: 48px; border: 1px solid var(--line-2); border-radius: 10px; padding: 0 14px; font-family: inherit;
+  font-size: 16px; background: var(--card); color: var(--ink); width: 100%;
+}
+.field textarea { padding: 12px 14px; resize: vertical; min-height: 96px; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.agree {
+  display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5; background: var(--card);
+  border: 1px solid var(--line); border-radius: 10px; padding: 12px;
+}
+.agree input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--green); flex: none; }
+.notice {
+  min-height: 56px; border: 1px dashed #A9B1AC; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; color: var(--muted); padding: 8px; text-align: center;
+}
+.error { color: var(--red-ink); background: var(--red-bg); border-radius: 10px; padding: 10px 12px; font-size: 14px; margin: 0; }
+.submit { min-height: 54px; font-size: 17px; font-weight: 800; }
+.submit[disabled] { opacity: 0.6; cursor: wait; }
+
+.done { padding: 48px 20px; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; }
+.done-icon { width: 72px; height: 72px; border-radius: 50%; background: var(--green-bg); display: flex; align-items: center; justify-content: center; }
+.done h2 { font-size: 22px; font-weight: 800; margin: 0; }
+.done p { font-size: 15px; line-height: 1.7; color: var(--ink-2); margin: 0; }
+.done .box { width: 100%; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 14px; font-size: 14px; color: var(--ink-2); text-align: left; line-height: 1.7; }
+.kakao { width: 100%; background: #FEE500; border-color: #FEE500; color: #191919; }
+.kakao:hover { background: #F2D900; color: #191919; }
+
+.doc { padding: 24px 20px 40px; font-size: 15px; line-height: 1.75; }
+.doc h1 { font-size: 22px; margin: 0 0 12px; }
+.doc h2 { font-size: 17px; margin: 24px 0 8px; }
+
+[hidden] { display: none !important; }

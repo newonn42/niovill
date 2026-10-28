@@ -1,0 +1,20 @@
+{
+  "name": "niovill",
+  "description": "고시원 · 원룸텔 홈페이지 (공실 안내 · 입실/방보기/대기 신청 · 관리자)",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler d1 migrations apply DB --local && wrangler dev",
+    "predeploy": "wrangler d1 migrations apply DB --remote",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "4.136.1"
+  },
+  "cloudflare": {
+    "bindings": {
+      "DB": {
+        "description": "방 목록 · 신청서를 저장하는 데이터베이스입니다. 이름은 그대로 두셔도 됩니다."
+      }
+    }
+  }
+}
