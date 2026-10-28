@@ -2,8 +2,8 @@
    - 데이터베이스(D1, 이름 DB)에서 방 상태를 읽어 화면 숫자를 채웁니다.
    - 읽기에 실패하면 "카톡·전화로 문의" 안전 화면이 그대로 나갑니다. */
 
-const TYPES = ['premium', 'outer', 'inner'];
-const LABEL = { premium: '프리미엄 외창', outer: '외창', inner: '내창' };
+export const TYPES = ['premium', 'outer', 'inner'];
+export const LABEL = { premium: '프리미엄 외창', outer: '외창', inner: '내창' };
 const BADGE_KEY = { premium: 'badgePremium', outer: 'badgeOuter', inner: 'badgeInner' };
 
 // 검색 차단 · 보안 헤더 (8단계 오픈 때 X-Robots-Tag 줄 삭제)

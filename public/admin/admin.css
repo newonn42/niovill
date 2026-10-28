@@ -1,0 +1,93 @@
+/* 관리자 화면 – 공통 스타일(styles.css) 위에 덧붙임 */
+.admin .wrap { padding-bottom: 24px; }
+.a-msg { padding: 40px 20px; text-align: center; color: var(--muted); }
+.a-card {
+  margin: 16px 16px 0; background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  padding: 18px 16px; display: flex; flex-direction: column; gap: 12px;
+}
+.a-card h1 { font-size: 21px; margin: 0; }
+.a-card h2 { font-size: 17px; margin: 0; }
+.a-card form { display: flex; flex-direction: column; gap: 14px; }
+.a-auth { margin-top: 32px; }
+.a-label { font-size: 12px; color: var(--muted); margin: 0; font-weight: 700; }
+.a-headline { font-size: 19px; font-weight: 800; margin: 0; }
+.a-sub { font-size: 14px; color: var(--ink-2); margin: 0; }
+.dot.gray { background: #9AA39F; }
+.a-counts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.a-counts div { background: var(--bg); border-radius: 10px; padding: 8px 4px; text-align: center; }
+.a-counts span { display: block; font-size: 12px; color: var(--muted); }
+.a-counts strong { font-size: 18px; }
+
+.a-tabs { display: grid; grid-template-columns: 1fr 1fr; background: var(--card); border-bottom: 1px solid var(--line); }
+.a-tabs button {
+  border: 0; background: none; font-family: inherit; font-size: 15px; font-weight: 700; color: var(--muted);
+  padding: 14px 0; min-height: 48px; border-bottom: 3px solid transparent; cursor: pointer;
+}
+.a-tabs button[aria-selected="true"] { color: var(--green); border-bottom-color: var(--green); }
+
+.a-section { padding: 22px 16px 0; display: flex; flex-direction: column; gap: 12px; }
+.a-section h2 { font-size: 18px; margin: 0; }
+.a-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.a-hint { font-size: 13px; color: var(--muted); }
+
+.a-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.a-tile {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: left;
+  border: 1.5px solid var(--line); background: var(--card); border-radius: 12px; padding: 10px;
+  font-family: inherit; color: var(--muted); cursor: pointer; min-height: 76px;
+}
+.a-tile b { font-size: 17px; color: var(--ink); }
+.a-tile small { font-size: 11px; }
+.a-tile span { font-size: 13px; font-weight: 700; }
+.a-tile.t-empty { background: var(--green-bg); border-color: var(--green); color: var(--green); }
+.a-tile.t-soon { background: var(--amber-bg); border-color: #E3B77E; color: var(--amber); }
+.a-tile.t-late { background: var(--red-bg); border-color: var(--red); color: var(--red-ink); }
+
+.a-empty { background: var(--card); border: 1px dashed var(--line-2); border-radius: 12px; padding: 20px; text-align: center; }
+.a-empty p { margin: 0 0 12px; color: var(--ink-2); }
+.a-empty .btn { width: 100%; }
+
+.a-hidden-rooms { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.a-hidden-rooms summary { font-weight: 700; cursor: pointer; }
+.a-hidden-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid var(--gray-bg); font-size: 14px; }
+.a-hidden-item:first-child { border-top: 0; }
+
+.a-last { font-size: 13px; color: var(--muted); margin: 0; }
+.a-link { background: none; border: 0; padding: 4px 0; font: inherit; font-size: 14px; color: var(--green); font-weight: 700; cursor: pointer; text-decoration: underline; }
+summary.a-link { list-style: none; display: inline-block; }
+summary.a-link::-webkit-details-marker { display: none; }
+.a-log { margin: 0; padding: 0 0 0 4px; list-style: none; font-size: 13px; color: var(--ink-2); background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
+.a-log li { padding: 9px 12px; border-top: 1px solid var(--gray-bg); }
+.a-log li:first-child { border-top: 0; }
+
+.a-list { list-style: none; margin: 0; padding: 0; }
+.a-list li { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 0; border-top: 1px solid var(--gray-bg); font-size: 15px; }
+.a-list li:first-child { border-top: 0; }
+.a-list small { color: var(--muted); }
+.a-ok { color: var(--green); background: var(--green-bg); border-radius: 10px; padding: 10px 12px; font-size: 14px; margin: 0; }
+.a-logout { margin: 20px 16px 0; width: calc(100% - 32px); flex: none; }
+.a-danger { background: none; border: 0; color: var(--red-ink); font: inherit; font-size: 14px; font-weight: 700; padding: 8px 0; cursor: pointer; text-decoration: underline; }
+.a-small { font-size: 13px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line-2); background: var(--card); font-family: inherit; cursor: pointer; }
+
+/* 아래에서 올라오는 창 */
+.a-sheet { position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-end; justify-content: center; }
+.a-sheet-bg { position: absolute; inset: 0; background: rgba(27, 34, 32, 0.45); }
+.a-sheet-box {
+  position: relative; width: 100%; max-width: 480px; background: var(--card); border-radius: 18px 18px 0 0;
+  padding: 18px 16px calc(18px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 14px;
+  max-height: 90vh; overflow-y: auto;
+}
+.a-sheet-box h2 { font-size: 18px; margin: 0; }
+.a-x { border: 0; background: none; font-size: 20px; width: 44px; height: 44px; cursor: pointer; color: var(--muted); }
+.a-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.a-choices button {
+  min-height: 52px; border-radius: 12px; border: 1.5px solid var(--line-2); background: var(--card);
+  font-family: inherit; font-size: 15px; font-weight: 700; color: var(--ink); cursor: pointer;
+}
+.a-choices button[aria-pressed="true"][data-status="occupied"] { background: var(--ink-2); border-color: var(--ink-2); color: #fff; }
+.a-choices button[aria-pressed="true"][data-status="empty"] { background: var(--green); border-color: var(--green); color: #fff; }
+.a-choices button[aria-pressed="true"][data-status="soon"] { background: var(--amber-dot); border-color: var(--amber-dot); color: #fff; }
+.a-more { border-top: 1px solid var(--gray-bg); padding-top: 10px; }
+.a-more[open] { display: flex; flex-direction: column; gap: 12px; }
+.a-more .btn { font-size: 14px; padding: 12px 0; }
+body.sheet-open { overflow: hidden; }
