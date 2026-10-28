@@ -48,6 +48,8 @@
       if (!r.admin) { show('viewLogin'); return; }
       $('whoami').textContent = r.admin.name + ' 님';
       show('viewMain');
+      setBadge(r.newCount || 0);
+      loadInbox('new');
       loadStatus();
     });
   }
@@ -81,7 +83,9 @@
   var tabs = document.querySelectorAll('.a-tabs button');
   function openTab(name) {
     for (var i = 0; i < tabs.length; i++) tabs[i].setAttribute('aria-selected', tabs[i].getAttribute('data-tab') === name ? 'true' : 'false');
+    $('tabInbox').hidden = name !== 'inbox';
     $('tabStatus').hidden = name !== 'status';
+    if (name === 'inbox') loadInbox(currentFilter);
     $('tabSettings').hidden = name !== 'settings';
     if (name === 'settings') loadAdmins();
     window.scrollTo(0, 0);
@@ -118,6 +122,123 @@
         loadStatus();
       });
     });
+  }
+
+  /* ── 신청함 ── */
+  var currentFilter = 'new';
+  var STATUS_TEXT = { new: '새 신청', contacted: '연락함', done: '완료' };
+  var filterBtns = document.querySelectorAll('.a-filter button');
+  for (var f = 0; f < filterBtns.length; f++) {
+    filterBtns[f].addEventListener('click', function () { loadInbox(this.getAttribute('data-filter')); });
+  }
+  function setBadge(n) {
+    $('newBadge').textContent = n;
+    $('newBadge').hidden = !n;
+  }
+  function fmtPhone(p) {
+    return p.length === 11 ? p.slice(0, 3) + '-' + p.slice(3, 7) + '-' + p.slice(7) : p.length === 10 ? p.slice(0, 3) + '-' + p.slice(3, 6) + '-' + p.slice(6) : p;
+  }
+  function fmtDate(d) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(d || '');
+    return m ? Number(m[2]) + '/' + Number(m[3]) : '';
+  }
+  function loadInbox(filter) {
+    currentFilter = filter;
+    for (var i = 0; i < filterBtns.length; i++) filterBtns[i].setAttribute('aria-pressed', filterBtns[i].getAttribute('data-filter') === filter ? 'true' : 'false');
+    return api('inquiries?filter=' + filter).then(function (r) {
+      if (needLogin(r)) return;
+      if (!r.ok) { $('inboxError').textContent = r.error; $('inboxError').hidden = false; return; }
+      $('inboxError').hidden = true;
+      $('cntNew').textContent = r.counts.new;
+      $('cntContacted').textContent = r.counts.contacted;
+      $('cntDone').textContent = r.counts.done;
+      setBadge(r.counts.new);
+      var box = $('inboxList');
+      box.textContent = '';
+      r.items.forEach(function (it) { box.appendChild(itemCard(it, r)); });
+      $('inboxEmpty').textContent = filter === 'new' ? '새 신청이 없습니다' : STATUS_TEXT[filter] + ' 신청이 없습니다';
+      $('inboxEmpty').hidden = r.items.length > 0;
+    });
+  }
+  function itemCard(it, r) {
+    var card = el('article', 'a-item' + (it.status === 'new' ? ' is-new' : ''));
+    var head = el('div', 'a-item-head');
+    var who = el('b', '', it.name);
+    if (it.was_full) who.appendChild(el('span', 'a-tag', '만실 때 대기'));
+    head.appendChild(who);
+    head.appendChild(el('small', '', it.created));
+    card.appendChild(head);
+
+    var tel = el('a', 'a-tel', '📞 ' + fmtPhone(it.phone));
+    tel.href = 'tel:' + it.phone;
+    card.appendChild(tel);
+
+    var meta = [];
+    if (it.room_type && it.room_type !== 'any') meta.push(r.roomTypes[it.room_type] || it.room_type);
+    else meta.push('타입 상관없음');
+    if (it.move_date) meta.push(fmtDate(it.move_date) + ' 입실 희망');
+    if (it.period && r.periods[it.period]) meta.push(r.periods[it.period]);
+    card.appendChild(el('p', 'a-meta', meta.join(' · ')));
+    if (it.message) card.appendChild(el('p', 'a-text', it.message));
+
+    var seg = el('div', 'a-seg');
+    ['new', 'contacted', 'done'].forEach(function (st) {
+      var b = el('button', '', STATUS_TEXT[st]);
+      b.type = 'button';
+      b.setAttribute('aria-pressed', it.status === st ? 'true' : 'false');
+      b.addEventListener('click', function () {
+        if (it.status === st) return;
+        b.disabled = true;
+        api('inquiries/update', { id: it.id, status: st }).then(function (x) {
+          b.disabled = false;
+          if (needLogin(x)) return;
+          if (!x.ok) { $('inboxError').textContent = x.error; $('inboxError').hidden = false; return; }
+          loadInbox(currentFilter);
+        });
+      });
+      seg.appendChild(b);
+    });
+    card.appendChild(seg);
+
+    var memo = el('div', 'a-memo');
+    var input = el('input');
+    input.maxLength = 300;
+    input.placeholder = '메모 (예: 11/2 방보기 약속)';
+    input.value = it.memo || '';
+    var save = el('button', 'a-small', '저장');
+    save.type = 'button';
+    save.addEventListener('click', function () {
+      save.disabled = true;
+      api('inquiries/update', { id: it.id, memo: input.value }).then(function (x) {
+        save.disabled = false;
+        if (needLogin(x)) return;
+        save.textContent = x.ok ? '저장됨' : '실패';
+        setTimeout(function () { save.textContent = '저장'; }, 1500);
+      });
+    });
+    memo.appendChild(input);
+    memo.appendChild(save);
+    card.appendChild(memo);
+
+    var foot = el('div', 'a-foot');
+    var info = [];
+    if (it.updated_by) info.push('처리: ' + it.updated_by);
+    if (it.status === 'done') info.push(Math.max(0, it.days_left) + '일 뒤 자동 삭제');
+    foot.appendChild(el('span', '', info.join(' · ')));
+    var del = el('button', 'a-danger', '삭제');
+    del.type = 'button';
+    var armed = false;
+    del.addEventListener('click', function () {
+      if (!armed) { armed = true; del.textContent = '한 번 더 누르면 삭제'; return; }
+      del.disabled = true;
+      api('inquiries/delete', { id: it.id }).then(function (x) {
+        if (needLogin(x)) return;
+        loadInbox(currentFilter);
+      });
+    });
+    foot.appendChild(del);
+    card.appendChild(foot);
+    return card;
   }
 
   /* ── 계정 탭 ── */

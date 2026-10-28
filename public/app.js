@@ -44,10 +44,35 @@
     }
     if (!agreeEl.checked) { showError('개인정보 수집·이용에 동의해 주세요.'); agreeEl.focus(); return; }
 
-    // 아직 저장하지 않습니다. 4단계에서 서버 저장 후에만 완료 화면을 보여주도록 바뀝니다.
     submitBtn.disabled = true;
-    form.hidden = true;
-    document.getElementById('done').hidden = false;
-    window.scrollTo(0, 0);
+    submitBtn.textContent = '보내는 중…';
+    var payload = {
+      name: name,
+      phone: phone,
+      roomType: document.getElementById('roomType').value,
+      date: document.getElementById('date').value,
+      period: document.getElementById('period').value,
+      message: document.getElementById('message').value,
+      agree: true,
+      website: document.getElementById('website').value
+    };
+    function failed(msg) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = '상담 신청하기';
+      showError(msg || '전송하지 못했습니다. 잠시 후 다시 시도하시거나 카톡·전화로 문의해 주세요.');
+    }
+    fetch('/api/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (res) {
+      return res.json().then(function (j) { return j; }, function () { return { ok: false }; });
+    }).then(function (r) {
+      if (!r || !r.ok) { failed(r && r.error); return; }
+      // 저장이 확인된 뒤에만 완료 화면
+      form.hidden = true;
+      document.getElementById('done').hidden = false;
+      window.scrollTo(0, 0);
+    }, function () { failed('인터넷 연결을 확인해 주세요. 계속 안 되면 카톡·전화로 문의해 주세요.'); });
   });
 })();

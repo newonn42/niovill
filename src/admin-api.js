@@ -4,6 +4,9 @@ import {
   sessionCookie, clearCookie, lockKey, lockedMinutes, recordFail, clearFails
 } from './auth.js';
 import { isFull } from './home.js';
+import { ROOM_TYPES, PERIODS } from './apply-api.js';
+
+const KEEP_DAYS = 90; // 완료 후 보관 기간
 
 function json(body, status = 200, extraHeaders) {
   const h = new Headers({
@@ -51,7 +54,8 @@ async function me(env, request) {
   const n = await adminCount(env.DB);
   if (n === 0) return json({ ok: true, needSetup: true, admin: null });
   const admin = await currentAdmin(env.DB, request);
-  return json({ ok: true, needSetup: false, admin: admin ? { name: admin.name, username: admin.username } : null });
+  if (!admin) return json({ ok: true, needSetup: false, admin: null });
+  return json({ ok: true, needSetup: false, admin: { name: admin.name, username: admin.username }, newCount: await newCount(env) });
 }
 
 async function setup(env, request, body) {
@@ -121,6 +125,76 @@ async function statusSet(env, admin, body) {
   return json({ ok: true });
 }
 
+/* ── 로그인 후: 신청함 ── */
+
+async function purgeOld(db) {
+  // 완료 후 90일 지난 신청은 자동 삭제
+  await db.prepare("DELETE FROM inquiries WHERE status = 'done' AND done_at < datetime('now', ?)").bind('-' + KEEP_DAYS + ' days').run();
+}
+
+async function inquiriesGet(env, url) {
+  await purgeOld(env.DB);
+  const filter = url.searchParams.get('filter') || 'new';
+  const where = { new: "status = 'new'", contacted: "status = 'contacted'", done: "status = 'done'", all: '1 = 1' }[filter];
+  if (!where) return fail('목록 구분을 확인해 주세요');
+  const { results } = await env.DB
+    .prepare(
+      "SELECT id, name, phone, room_type, move_date, period, message, was_full, status, memo, updated_by, " +
+        "strftime('%m/%d %H:%M', created_at, '+9 hours') AS created, " +
+        "CAST(ROUND(julianday(COALESCE(done_at, 'now')) + " + KEEP_DAYS + " - julianday('now')) AS INTEGER) AS days_left " +
+        'FROM inquiries WHERE ' + where + ' ORDER BY id DESC LIMIT 200'
+    )
+    .all();
+  const counts = await env.DB
+    .prepare("SELECT SUM(status = 'new') AS new, SUM(status = 'contacted') AS contacted, SUM(status = 'done') AS done, COUNT(*) AS total FROM inquiries")
+    .first();
+  return json({
+    ok: true,
+    filter,
+    roomTypes: ROOM_TYPES,
+    periods: PERIODS,
+    keepDays: KEEP_DAYS,
+    counts: { new: counts.new || 0, contacted: counts.contacted || 0, done: counts.done || 0, total: counts.total || 0 },
+    items: results || []
+  });
+}
+
+async function inquiryUpdate(env, admin, body) {
+  const id = Number(body.id);
+  if (!Number.isInteger(id)) return fail('신청을 확인해 주세요');
+  const sets = [];
+  const binds = [];
+  if (body.status !== undefined) {
+    if (!['new', 'contacted', 'done'].includes(body.status)) return fail('상태를 확인해 주세요');
+    sets.push('status = ?', "done_at = CASE WHEN ? = 'done' THEN COALESCE(done_at, datetime('now')) ELSE NULL END");
+    binds.push(body.status, body.status);
+  }
+  if (body.memo !== undefined) {
+    if (typeof body.memo !== 'string') return fail('메모를 확인해 주세요');
+    sets.push('memo = ?');
+    binds.push(body.memo.trim().slice(0, 300) || null);
+  }
+  if (!sets.length) return fail('바꿀 내용이 없습니다');
+  sets.push('updated_by = ?', "updated_at = datetime('now')");
+  binds.push(admin.name, id);
+  const res = await env.DB.prepare('UPDATE inquiries SET ' + sets.join(', ') + ' WHERE id = ?').bind(...binds).run();
+  if (!res.meta || res.meta.changes !== 1) return fail('없는 신청입니다', 404);
+  return json({ ok: true });
+}
+
+async function inquiryDelete(env, body) {
+  const id = Number(body.id);
+  if (!Number.isInteger(id)) return fail('신청을 확인해 주세요');
+  const res = await env.DB.prepare('DELETE FROM inquiries WHERE id = ?').bind(id).run();
+  if (!res.meta || res.meta.changes !== 1) return fail('없는 신청입니다', 404);
+  return json({ ok: true });
+}
+
+async function newCount(env) {
+  const r = await env.DB.prepare("SELECT COUNT(*) AS n FROM inquiries WHERE status = 'new'").first();
+  return r ? r.n : 0;
+}
+
 /* ── 로그인 후: 관리자 계정 ── */
 
 async function adminsGet(env, admin) {
@@ -170,6 +244,7 @@ async function passwordChange(env, request, admin, body) {
 /* ── 길 안내 ── */
 
 export async function handleAdminApi(request, env, path) {
+  const url = new URL(request.url);
   if (!env.DB) return fail('데이터베이스가 연결되지 않았습니다', 503);
   try {
     if (request.method === 'GET' && path === 'me') return await me(env, request);
@@ -188,6 +263,8 @@ export async function handleAdminApi(request, env, path) {
       const admin = await currentAdmin(env.DB, request);
       if (!admin) return fail('다시 로그인해 주세요', 401);
       if (path === 'status') return await statusSet(env, admin, body);
+      if (path === 'inquiries/update') return await inquiryUpdate(env, admin, body);
+      if (path === 'inquiries/delete') return await inquiryDelete(env, body);
       if (path === 'admins/add') return await adminsAdd(env, admin, body);
       if (path === 'admins/delete') return await adminsDelete(env, admin, body);
       if (path === 'password') return await passwordChange(env, request, admin, body);
@@ -198,6 +275,7 @@ export async function handleAdminApi(request, env, path) {
       const admin = await currentAdmin(env.DB, request);
       if (!admin) return fail('다시 로그인해 주세요', 401);
       if (path === 'status') return await statusGet(env);
+      if (path === 'inquiries') return await inquiriesGet(env, url);
       if (path === 'admins') return await adminsGet(env, admin);
     }
     return fail('없는 기능입니다', 404);

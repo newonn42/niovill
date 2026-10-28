@@ -54,12 +54,26 @@
   <!-- 로그인 후 -->
   <div id="viewMain" hidden>
     <nav class="a-tabs" role="tablist">
-      <button type="button" role="tab" data-tab="status" aria-selected="true">모집 상태</button>
+      <button type="button" role="tab" data-tab="inbox" aria-selected="true">신청함 <span class="a-badge" id="newBadge" hidden></span></button>
+      <button type="button" role="tab" data-tab="status" aria-selected="false">모집 상태</button>
       <button type="button" role="tab" data-tab="settings" aria-selected="false">계정</button>
     </nav>
 
+    <!-- 신청함 탭 -->
+    <div id="tabInbox">
+      <div class="a-filter" role="group" aria-label="신청 구분">
+        <button type="button" data-filter="new" aria-pressed="true">새 신청 <b id="cntNew">0</b></button>
+        <button type="button" data-filter="contacted" aria-pressed="false">연락함 <b id="cntContacted">0</b></button>
+        <button type="button" data-filter="done" aria-pressed="false">완료 <b id="cntDone">0</b></button>
+      </div>
+      <p class="error" id="inboxError" role="alert" hidden></p>
+      <div id="inboxList" class="a-inbox"></div>
+      <p class="a-msg" id="inboxEmpty" hidden></p>
+      <p class="help a-pad">완료 처리 후 <b>90일</b>이 지나면 자동으로 삭제됩니다.</p>
+    </div>
+
     <!-- 모집 상태 탭 -->
-    <div id="tabStatus">
+    <div id="tabStatus" hidden>
       <section class="a-card">
         <h2>홈페이지 모집 상태</h2>
         <p class="help">평소에는 <b>모집 중</b>으로 두세요. 오래 만실일 때만 <b>만실</b>로 바꾸면 홈 문구가 "현재 만실 · 대기 신청"으로 바뀝니다. 신청서는 두 경우 모두 받습니다.</p>

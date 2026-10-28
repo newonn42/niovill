@@ -28,6 +28,8 @@ body {
   color: var(--ink);
   font-family: 'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
   line-height: 1.5;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 a { color: var(--green); }
 a:hover { color: var(--green-dark); }
@@ -62,6 +64,21 @@ img { max-width: 100%; display: block; }
   color: var(--ink-2); font-size: 14px; overflow: hidden;
 }
 .hero img { width: 100%; height: 100%; object-fit: cover; }
+
+/* 소개 카드 */
+.intro {
+  margin: -36px 16px 0; position: relative; background: var(--card); border-radius: 16px; padding: 20px;
+  box-shadow: 0 4px 16px rgba(27, 34, 32, 0.08); display: flex; flex-direction: column; gap: 10px;
+}
+.intro h1 { font-size: 21px; font-weight: 800; margin: 0; line-height: 1.35; letter-spacing: -0.3px; }
+.intro-desc { font-size: 15px; color: var(--ink-2); margin: 0; }
+.chips { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.chips li { font-size: 13px; font-weight: 700; color: var(--green); background: var(--green-bg); border-radius: 999px; padding: 6px 10px; }
+.full-banner { margin: 0; background: var(--red-bg); color: var(--red-ink); font-size: 14px; font-weight: 700; border-radius: 10px; padding: 10px 12px; }
+.cta { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px 16px; display: flex; flex-direction: column; gap: 12px; }
+.cta h2 { font-size: 19px; margin: 0; }
+.cta p { margin: 0; font-size: 14px; color: var(--ink-2); line-height: 1.6; }
+.cta .fine { font-size: 12px; color: var(--muted); }
 
 /* 공실 카드 */
 .status {
@@ -146,7 +163,7 @@ img { max-width: 100%; display: block; }
   background: var(--card); border-top: 1px solid var(--line);
 }
 .contact-inner {
-  max-width: 480px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px;
+  max-width: 480px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1.7fr) repeat(3, minmax(0, 1fr)); gap: 6px; align-items: center;
   padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
 }
 .contact a {
@@ -154,11 +171,16 @@ img { max-width: 100%; display: block; }
   text-decoration: none; color: var(--ink); font-size: 13px; font-weight: 700;
 }
 .contact svg { width: 22px; height: 22px; }
+.contact a.contact-main {
+  flex-direction: row; justify-content: center; background: var(--green); color: #FFFFFF; border-radius: 12px;
+  font-size: 16px; font-weight: 800; min-height: 52px;
+}
+.contact a.contact-main:hover { background: var(--green-dark); color: #FFFFFF; }
 
 /* 만실 상태 */
 .full-only { display: none; }
 body.is-full .full-only { display: block; }
-body.is-full .status.full-only { display: flex; }
+body.is-full span.full-only, body.is-full a .full-only { display: inline; }
 body.is-full .open-only { display: none; }
 
 /* 신청서 */
@@ -199,6 +221,7 @@ body.is-full .open-only { display: none; }
   min-height: 56px; border: 1px dashed #A9B1AC; border-radius: 10px; display: flex; align-items: center; justify-content: center;
   font-size: 13px; color: var(--muted); padding: 8px; text-align: center;
 }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
 .error { color: var(--red-ink); background: var(--red-bg); border-radius: 10px; padding: 10px 12px; font-size: 14px; margin: 0; }
 .submit { min-height: 54px; font-size: 17px; font-weight: 800; }
 .submit[disabled] { opacity: 0.6; cursor: wait; }
