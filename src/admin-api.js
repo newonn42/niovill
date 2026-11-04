@@ -6,6 +6,7 @@ import {
 import { isFull } from './home.js';
 import { ROOM_TYPES, PERIODS } from './apply-api.js';
 import { TOKEN_RE, tgCall, getSetting, setSetting, getChats, sendToAll } from './telegram.js';
+import { getVapid, pushToAll, fromB64u } from './push.js';
 
 const KEEP_DAYS = 90; // 완료 후 보관 기간
 
@@ -205,6 +206,52 @@ async function newCount(env) {
   return r ? r.n : 0;
 }
 
+/* ── 로그인 후: 휴대폰 알림 ── */
+
+async function pushGet(env, admin) {
+  const vapid = await getVapid(env.DB);
+  const { results } = await env.DB
+    .prepare("SELECT s.endpoint, s.device, a.name AS owner, s.admin_id, strftime('%m/%d', s.created_at, '+9 hours') AS since FROM push_subs s LEFT JOIN admins a ON a.id = s.admin_id ORDER BY s.created_at")
+    .all();
+  return json({
+    ok: true,
+    publicKey: vapid.publicKey,
+    me: admin.id,
+    devices: (results || []).map((r) => ({ endpoint: r.endpoint, device: r.device || '휴대폰', owner: r.owner || '', mine: r.admin_id === admin.id, since: r.since }))
+  });
+}
+
+async function pushSubscribe(env, admin, body) {
+  const endpoint = typeof body.endpoint === 'string' ? body.endpoint : '';
+  const keys = body.keys || {};
+  let okKeys = false;
+  try { okKeys = fromB64u(keys.p256dh || '').length === 65 && fromB64u(keys.auth || '').length >= 16; } catch (e) { okKeys = false; }
+  if (!/^https:\/\/[^\s]{10,}$/.test(endpoint) || endpoint.length > 1000 || !okKeys) return fail('이 기기의 알림 정보를 확인하지 못했습니다');
+  const device = typeof body.device === 'string' ? body.device.slice(0, 40) : '';
+  const n = await env.DB.prepare('SELECT COUNT(*) AS n FROM push_subs').first();
+  if (n && n.n >= 20) return fail('알림 기기는 20대까지 등록할 수 있습니다');
+  await env.DB
+    .prepare(
+      'INSERT INTO push_subs (endpoint, p256dh, auth, admin_id, device) VALUES (?, ?, ?, ?, ?) ' +
+        "ON CONFLICT(endpoint) DO UPDATE SET p256dh = excluded.p256dh, auth = excluded.auth, admin_id = excluded.admin_id, device = excluded.device, created_at = datetime('now')"
+    )
+    .bind(endpoint, keys.p256dh, keys.auth, admin.id, device)
+    .run();
+  return json({ ok: true });
+}
+
+async function pushUnsubscribe(env, body) {
+  await env.DB.prepare('DELETE FROM push_subs WHERE endpoint = ?').bind(String(body.endpoint || '')).run();
+  return json({ ok: true });
+}
+
+async function pushTest(env, admin) {
+  const r = await pushToAll(env, { title: '✅ 알림 테스트', body: '새 상담 신청이 오면 이렇게 알려 드립니다', url: '/admin/' }, admin.id);
+  if (!r.total) return fail('이 계정으로 알림을 켠 기기가 없습니다. 먼저 [이 휴대폰에서 알림 켜기]를 눌러 주세요');
+  if (!r.sent) return fail('보내지 못했습니다. 휴대폰 설정에서 알림이 허용되어 있는지 확인해 주세요');
+  return json({ ok: true, sent: r.sent, failed: r.failed });
+}
+
 /* ── 로그인 후: 텔레그램 알림 ── */
 
 async function tgGet(env) {
@@ -300,6 +347,7 @@ async function adminsDelete(env, admin, body) {
   const res = await env.DB.prepare('DELETE FROM admins WHERE id = ?').bind(id).run();
   if (!res.meta || res.meta.changes !== 1) return fail('없는 계정입니다', 404);
   await env.DB.prepare('DELETE FROM sessions WHERE admin_id = ?').bind(id).run();
+  await env.DB.prepare('DELETE FROM push_subs WHERE admin_id = ?').bind(id).run();
   return json({ ok: true });
 }
 
@@ -339,6 +387,9 @@ export async function handleAdminApi(request, env, path) {
       if (path === 'status') return await statusSet(env, admin, body);
       if (path === 'inquiries/update') return await inquiryUpdate(env, admin, body);
       if (path === 'inquiries/delete') return await inquiryDelete(env, body);
+      if (path === 'push/subscribe') return await pushSubscribe(env, admin, body);
+      if (path === 'push/unsubscribe') return await pushUnsubscribe(env, body);
+      if (path === 'push/test') return await pushTest(env, admin);
       if (path === 'telegram/token') return await tgToken(env, admin, body);
       if (path === 'telegram/find') return await tgFind(env, admin);
       if (path === 'telegram/remove') return await tgRemove(env, admin, body);
@@ -356,6 +407,7 @@ export async function handleAdminApi(request, env, path) {
       if (path === 'status') return await statusGet(env);
       if (path === 'inquiries') return await inquiriesGet(env, url);
       if (path === 'telegram') return await tgGet(env);
+      if (path === 'push') return await pushGet(env, admin);
       if (path === 'admins') return await adminsGet(env, admin);
     }
     return fail('없는 기능입니다', 404);

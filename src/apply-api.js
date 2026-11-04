@@ -1,6 +1,7 @@
 /* 손님 상담 신청 저장 (POST /api/apply) */
 import { isFull } from './home.js';
 import { sendToAll, inquiryText, getSetting } from './telegram.js';
+import { pushToAll } from './push.js';
 
 export const ROOM_TYPES = { any: '상관없음', premium: '프리미엄 외창', outer: '외창', inner: '내창' };
 export const PERIODS = { '': '', '1-2m': '1~2개월', '3-6m': '3~6개월', '6m+': '6개월 이상' };
@@ -28,7 +29,19 @@ function checkDate(d) {
 function notify(ctx, env, request, inq) {
   const job = (async () => {
     const site = (await getSetting(env.DB, 'site_url')) || new URL(request.url).origin;
-    await sendToAll(env, inquiryText(inq, { roomTypes: ROOM_TYPES, periods: PERIODS }, site + '/admin/'));
+    const want = [inq.room_type && inq.room_type !== 'any' ? ROOM_TYPES[inq.room_type] : '타입 상관없음'];
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(inq.move_date || '');
+    if (m) want.push(Number(m[2]) + '/' + Number(m[3]) + ' 입실 희망');
+    // 잠금 화면에 보이므로 연락처는 넣지 않습니다
+    const push = pushToAll(env, {
+      title: (inq.merged ? '🔁 같은 분이 다시 남김' : '🏠 새 상담 신청') + (inq.was_full ? ' (대기)' : ''),
+      body: inq.name + ' · ' + want.join(' · '),
+      url: '/admin/'
+    }).catch((e) => console.log('push notify failed:', e && e.message));
+    const tg = sendToAll(env, inquiryText(inq, { roomTypes: ROOM_TYPES, periods: PERIODS }, site + '/admin/')).catch((e) =>
+      console.log('telegram notify failed:', e && e.message)
+    );
+    await Promise.all([push, tg]);
   })().catch((e) => console.log('notify failed:', e && e.message));
   if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(job);
 }

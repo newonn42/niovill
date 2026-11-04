@@ -12,6 +12,11 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/styles.css">
 <link rel="stylesheet" href="/admin/admin.css">
+<link rel="manifest" href="/admin/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/admin/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="니오빌 관리">
 </head>
 <body class="admin">
 <div class="wrap" style="padding-bottom: 24px">
@@ -88,8 +93,39 @@
 
     <!-- 설정 탭 -->
     <div id="tabSettings" hidden>
+      <section class="a-card" id="pushCard">
+        <h2>휴대폰 알림 <span class="a-state" id="pushState"></span></h2>
+        <p class="help">새 상담 신청이 오면 이 휴대폰 알림창에 바로 뜹니다. 알림을 받을 휴대폰마다 한 번씩 켜 주세요.</p>
+
+        <div id="pushIos" hidden>
+          <p class="a-warn">아이폰은 이 화면을 <b>홈 화면에 추가</b>한 뒤에만 알림을 받을 수 있습니다.</p>
+          <ol class="a-steps">
+            <li>이 주소를 <b>Safari</b>로 엽니다</li>
+            <li>아래쪽 <b>공유 버튼</b>(네모에 위쪽 화살표)을 누릅니다</li>
+            <li><b>홈 화면에 추가</b> → 오른쪽 위 <b>추가</b>를 누릅니다</li>
+            <li>홈 화면에 생긴 <b>니오빌 관리</b> 아이콘으로 엽니다 (로그인을 한 번 더 해야 합니다)</li>
+            <li><b>설정</b> 탭 → <b>이 휴대폰에서 알림 켜기</b>를 누르고 <b>허용</b>을 누릅니다</li>
+          </ol>
+          <p class="help">iOS 16.4 이상에서 됩니다 (설정 → 일반 → 정보 → iOS 버전)</p>
+        </div>
+
+        <p class="a-warn" id="pushNoSupport" hidden>이 브라우저는 알림을 지원하지 않습니다. 갤럭시는 <b>크롬</b> 또는 <b>삼성 인터넷</b>으로 열어 주세요.</p>
+        <p class="a-warn" id="pushDenied" hidden>알림이 차단되어 있습니다. 휴대폰 <b>설정 → 애플리케이션(앱) → 브라우저 또는 니오빌 관리 → 알림</b>에서 허용한 뒤 다시 눌러 주세요.</p>
+
+        <div id="pushControls" hidden>
+          <button type="button" class="btn" id="pushOn">이 휴대폰에서 알림 켜기</button>
+          <div class="btn-row" id="pushOnRow" hidden>
+            <button type="button" class="btn ghost" id="pushTest">테스트 알림</button>
+            <button type="button" class="btn ghost" id="pushOff">이 휴대폰 알림 끄기</button>
+          </div>
+        </div>
+        <p class="error" id="pushError" role="alert" hidden></p>
+        <p class="a-ok" id="pushOk" hidden></p>
+        <ul class="a-list" id="pushDevices"></ul>
+      </section>
+
       <section class="a-card" id="tgCard">
-        <h2>텔레그램 알림 <span class="a-state" id="tgState"></span></h2>
+        <h2>텔레그램 알림 <small class="opt">(선택)</small> <span class="a-state" id="tgState"></span></h2>
 
         <div id="tgSetup">
           <ol class="a-steps">

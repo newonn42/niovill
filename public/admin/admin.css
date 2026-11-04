@@ -89,3 +89,7 @@ summary.a-link::-webkit-details-marker { display: none; }
 .a-state.off { background: var(--gray-bg); color: var(--muted); }
 #tgSetup, #tgReady { display: flex; flex-direction: column; gap: 12px; }
 #tgSetup[hidden], #tgReady[hidden] { display: none; }
+.a-warn { margin: 0; background: var(--amber-bg); color: var(--amber); border-radius: 10px; padding: 10px 12px; font-size: 14px; line-height: 1.6; }
+#pushIos, #pushControls { display: flex; flex-direction: column; gap: 10px; }
+#pushIos[hidden], #pushControls[hidden] { display: none; }
+.a-card h2 .opt { font-size: 13px; font-weight: 400; color: var(--muted); }

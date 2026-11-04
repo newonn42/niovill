@@ -92,7 +92,7 @@
     $('tabStatus').hidden = name !== 'status';
     if (name === 'inbox') loadInbox(currentFilter);
     $('tabSettings').hidden = name !== 'settings';
-    if (name === 'settings') { loadAdmins(); loadTg(); }
+    if (name === 'settings') { loadAdmins(); loadTg(); loadPush(); }
     window.scrollTo(0, 0);
   }
   for (var t = 0; t < tabs.length; t++) {
@@ -245,6 +245,120 @@
     card.appendChild(foot);
     return card;
   }
+
+  /* ── 휴대폰 알림 ── */
+  var ua = navigator.userAgent || '';
+  var isIOS = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  var isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+  var pushSupported = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  var pushKey = '';
+  function deviceName() {
+    if (isIOS) return '아이폰';
+    if (/SM-|Samsung/i.test(ua)) return '갤럭시';
+    if (/Android/i.test(ua)) return '안드로이드폰';
+    return 'PC';
+  }
+  function pushMsg(err, ok) {
+    $('pushError').textContent = err || ''; $('pushError').hidden = !err;
+    $('pushOk').textContent = ok || ''; $('pushOk').hidden = !ok;
+  }
+  function keyBytes(b64) {
+    var s = atob(b64.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((b64.length + 3) % 4));
+    var a = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) a[i] = s.charCodeAt(i);
+    return a;
+  }
+  function currentSub() {
+    if (!pushSupported) return Promise.resolve(null);
+    return navigator.serviceWorker.getRegistration('/admin/').then(function (reg) {
+      return reg ? reg.pushManager.getSubscription() : null;
+    }).catch(function () { return null; });
+  }
+  function loadPush() {
+    $('pushIos').hidden = !(isIOS && !isStandalone);
+    var usable = pushSupported && !(isIOS && !isStandalone);
+    $('pushNoSupport').hidden = pushSupported || isIOS;
+    $('pushDenied').hidden = !(usable && Notification.permission === 'denied');
+    $('pushControls').hidden = !usable;
+    return Promise.all([api('push'), currentSub()]).then(function (res) {
+      var r = res[0], sub = res[1];
+      if (needLogin(r)) return;
+      if (!r.ok) { pushMsg(r.error); return; }
+      pushKey = r.publicKey;
+      var mine = sub && r.devices.some(function (d) { return d.endpoint === sub.endpoint; });
+      $('pushOn').hidden = !!mine;
+      $('pushOnRow').hidden = !mine;
+      $('pushState').textContent = mine ? '이 휴대폰 켜짐' : '이 휴대폰 꺼짐';
+      $('pushState').className = 'a-state ' + (mine ? 'on' : 'off');
+      var ul = $('pushDevices');
+      ul.textContent = '';
+      r.devices.forEach(function (d) {
+        var li = el('li');
+        var label = el('span', '', '🔔 ' + d.owner + ' · ' + d.device + ' ');
+        label.appendChild(el('small', '', (sub && d.endpoint === sub.endpoint ? '(이 휴대폰) ' : '') + d.since + '부터'));
+        li.appendChild(label);
+        var x = el('button', 'a-small', '빼기');
+        x.type = 'button';
+        x.addEventListener('click', function () {
+          x.disabled = true;
+          api('push/unsubscribe', { endpoint: d.endpoint }).then(function (y) { if (needLogin(y)) return; loadPush(); });
+        });
+        li.appendChild(x);
+        ul.appendChild(li);
+      });
+      if (!r.devices.length) ul.appendChild(el('li', '', '아직 알림을 켠 휴대폰이 없습니다'));
+    });
+  }
+  $('pushOn').addEventListener('click', function () {
+    var btn = this;
+    pushMsg();
+    if (!pushKey) { pushMsg('잠시 후 다시 눌러 주세요'); return; }
+    lock(btn, true);
+    Notification.requestPermission().then(function (perm) {
+      if (perm !== 'granted') throw new Error('denied');
+      return navigator.serviceWorker.register('/admin/sw.js', { scope: '/admin/' });
+    }).then(function () {
+      return navigator.serviceWorker.ready;
+    }).then(function (reg) {
+      return reg.pushManager.getSubscription().then(function (old) {
+        return old || reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(pushKey) });
+      });
+    }).then(function (sub) {
+      var j = sub.toJSON();
+      return api('push/subscribe', { endpoint: j.endpoint, keys: j.keys, device: deviceName() });
+    }).then(function (r) {
+      lock(btn, false);
+      if (needLogin(r)) return;
+      if (!r.ok) { pushMsg(r.error); return; }
+      pushMsg('', '알림을 켰습니다. [테스트 알림]으로 확인해 보세요.');
+      loadPush();
+    }).catch(function (e) {
+      lock(btn, false);
+      if (e && e.message === 'denied') { $('pushDenied').hidden = false; pushMsg('알림 허용을 눌러야 받을 수 있습니다'); return; }
+      pushMsg('알림을 켜지 못했습니다. 브라우저를 최신으로 업데이트한 뒤 다시 시도해 주세요');
+    });
+  });
+  $('pushTest').addEventListener('click', function () {
+    var btn = this;
+    pushMsg();
+    lock(btn, true);
+    api('push/test', {}).then(function (r) {
+      lock(btn, false);
+      if (needLogin(r)) return;
+      if (!r.ok) { pushMsg(r.error); return; }
+      pushMsg('', '보냈습니다. 몇 초 안에 휴대폰 알림창을 확인해 주세요.');
+    });
+  });
+  $('pushOff').addEventListener('click', function () {
+    var btn = this;
+    pushMsg();
+    lock(btn, true);
+    currentSub().then(function (sub) {
+      if (!sub) return null;
+      var ep = sub.endpoint;
+      return sub.unsubscribe().catch(function () {}).then(function () { return api('push/unsubscribe', { endpoint: ep }); });
+    }).then(function () { lock(btn, false); pushMsg('', '이 휴대폰 알림을 껐습니다'); loadPush(); });
+  });
 
   /* ── 텔레그램 알림 ── */
   function tgMsg(err, ok) {
