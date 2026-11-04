@@ -83,7 +83,7 @@ export function inquiryText(inq, labels, adminUrl) {
   const lines = [
     (inq.merged ? '🔁 같은 분이 다시 남김' : '🏠 새 상담 신청') + (inq.was_full ? ' (만실 때 대기)' : ''),
     '이름: ' + inq.name,
-    '연락처: ' + phone,
+    '연락처: ' + (phone || '없음 (문의 칸 확인)'),
     '희망: ' + want.join(' · ')
   ];
   if (inq.message) lines.push('문의: ' + inq.message);

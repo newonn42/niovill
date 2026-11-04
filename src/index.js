@@ -5,7 +5,7 @@
    - "/api/apply" : 손님 상담 신청 저장
    - "/api/admin/..." : 관리자 기능 (화면은 public/admin)
    - 그 밖의 파일은 public 폴더에서 그대로 나갑니다 */
-import { handleHome, isFull, PAGE_HEADERS } from './home.js';
+import { handleHome, isFull, PAGE_HEADERS, PAGES } from './home.js';
 import { handleAdminApi } from './admin-api.js';
 import { handleApply } from './apply-api.js';
 import { ensureSchema } from './schema.js';
@@ -34,13 +34,28 @@ async function health(env) {
   });
 }
 
+// 사이트 지도 (검색엔진용)
+async function sitemap(request, env) {
+  let origin = new URL(request.url).origin;
+  try {
+    const row = env.DB ? await env.DB.prepare("SELECT value FROM settings WHERE key = 'site_url'").first() : null;
+    if (row && row.value.startsWith('https://')) origin = row.value;
+  } catch (e) { /* 요청 주소 사용 */ }
+  const pages = PAGES.filter((p) => p !== '/apply');
+  const today = new Date().toISOString().slice(0, 10);
+  const xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+    pages.map((p) => '  <url><loc>' + origin + p + '</loc><lastmod>' + today + '</lastmod></url>').join('\n') + '\n</urlset>\n';
+  return new Response(xml, { headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' } });
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     // 데이터를 쓰는 주소에서만 표 준비 (파일만 보내는 요청은 바로 통과)
-    const dynamic = url.pathname === '/' || url.pathname === '/apply' || url.pathname.startsWith('/api/') || url.pathname.startsWith('/media/');
+    const dynamic = PAGES.includes(url.pathname) || url.pathname === '/sitemap.xml' || url.pathname.startsWith('/api/') || url.pathname.startsWith('/media/');
     if (dynamic) await ensureSchema(env.DB);
-    if (request.method === 'GET' && (url.pathname === '/' || url.pathname === '/apply')) return handleHome(request, env);
+    if (request.method === 'GET' && PAGES.includes(url.pathname)) return handleHome(request, env);
+    if (request.method === 'GET' && url.pathname === '/sitemap.xml') return sitemap(request, env);
     if (request.method === 'GET' && url.pathname.startsWith('/media/')) return handleMedia(env, url.pathname.slice('/media/'.length));
     if (request.method === 'GET' && url.pathname === '/api/health') return health(env);
     if (url.pathname === '/api/apply') return handleApply(request, env, ctx);

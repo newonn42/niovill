@@ -1,4 +1,8 @@
-import { loadContent, loadPhotoVersions, applyContent } from './content.js';
+import { loadContent, loadPhotoVersions, applyContent, applySeo } from './content.js';
+import { getSetting } from './telegram.js';
+
+// 서버가 채워 보내는 손님 화면 주소
+export const PAGES = ['/', '/apply', '/en', '/area/imhak', '/area/gyesan', '/area/gyeyang-office'];
 /* 홈 화면: '모집 중 / 만실' 스위치에 맞춰 문구를 바꿔 보냅니다.
    - 스위치를 읽지 못하면 기본(모집 중) 화면이 그대로 나갑니다. */
 
@@ -28,7 +32,16 @@ export async function handleHome(request, env) {
   let full = false;
   let content = null;
   let photos = {};
+  const path = new URL(request.url).pathname;
+  let origin = new URL(request.url).origin;
+  // 짧은 주소 중계로 들어온 경우 그 주소 (응답은 저장되지 않으므로 이 값은 이 응답에만 쓰임)
+  const fh = request.headers.get('X-Forwarded-Host');
+  if (fh && /^[a-z0-9.-]+\.pages\.dev$/i.test(fh)) origin = 'https://' + fh;
   if (env.DB) {
+    try {
+      const site = await getSetting(env.DB, 'site_url');
+      if (site && site.startsWith('https://')) origin = site; // 대표 주소(짧은 주소)로 통일
+    } catch (e) { /* 요청 주소 사용 */ }
     try { full = await isFull(env.DB); } catch (e) { console.log('settings load failed:', e && e.message); }
     try {
       content = (await loadContent(env.DB)).values;
@@ -41,7 +54,10 @@ export async function handleHome(request, env) {
   try {
     let rw = new HTMLRewriter();
     if (full) rw = rw.on('body', { element(el) { el.setAttribute('class', 'is-full'); } });
-    if (content) rw = applyContent(rw, content, photos);
+    if (content) {
+      rw = applyContent(rw, content, photos);
+      rw = applySeo(rw, content, photos, origin, path);
+    }
     return new Response(rw.transform(asset).body, { status: 200, headers });
   } catch (e) {
     console.log('render failed:', e && e.message);

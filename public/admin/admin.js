@@ -176,9 +176,13 @@
     head.appendChild(el('small', '', it.created));
     card.appendChild(head);
 
-    var tel = el('a', 'a-tel', '📞 ' + fmtPhone(it.phone));
-    tel.href = 'tel:' + it.phone;
-    card.appendChild(tel);
+    if (it.phone) {
+      var tel = el('a', 'a-tel', '📞 ' + fmtPhone(it.phone));
+      tel.href = 'tel:' + it.phone;
+      card.appendChild(tel);
+    } else {
+      card.appendChild(el('p', 'a-meta', '📵 한국 번호 없음 → 아래 문의 칸의 연락처로 답장'));
+    }
 
     var meta = [];
     if (it.room_type && it.room_type !== 'any') meta.push(r.roomTypes[it.room_type] || it.room_type);

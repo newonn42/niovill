@@ -240,3 +240,8 @@ body.is-full .open-only { display: none; }
 .doc h2 { font-size: 17px; margin: 24px 0 8px; }
 
 [hidden] { display: none !important; }
+
+/* 지역 · 영어 페이지 */
+.intro.flat { margin-top: 16px; }
+.area-photo { margin: 16px 16px 0; border-radius: 14px; height: 200px; }
+.plain-list { margin: 0; padding: 14px 16px 14px 34px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; font-size: 15px; line-height: 1.9; }

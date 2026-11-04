@@ -71,7 +71,10 @@ export async function handleApply(request, env, ctx) {
   const message = str(body.message, 500);
 
   if (!name) return fail('이름을 입력해 주세요');
-  if (!/^01[016789][0-9]{7,8}$/.test(phone)) return fail('연락처를 확인해 주세요');
+  // 한국 번호가 없는 외국인: 문의 칸에 이메일·메신저를 적는 경우만 허용
+  const noPhone = body.noPhone === true && !phone;
+  if (noPhone && message.length < 5) return fail('연락처를 확인해 주세요');
+  if (!noPhone && !/^01[016789][0-9]{7,8}$/.test(phone)) return fail('연락처를 확인해 주세요');
   if (moveDate === null) return fail('입실 희망일을 확인해 주세요');
   if (body.agree !== true) return fail('개인정보 수집·이용에 동의해 주세요');
 
@@ -80,10 +83,12 @@ export async function handleApply(request, env, ctx) {
     try { full = await isFull(env.DB); } catch (e) { full = false; }
 
     // 같은 번호로 방금 들어온 신청이 있으면 내용을 합칩니다
-    const recent = await env.DB
-      .prepare("SELECT id, message FROM inquiries WHERE phone = ? AND created_at > datetime('now', ?) ORDER BY id DESC LIMIT 1")
-      .bind(phone, '-' + MERGE_MINUTES + ' minutes')
-      .first();
+    const recent = noPhone
+      ? null
+      : await env.DB
+          .prepare("SELECT id, message FROM inquiries WHERE phone = ? AND created_at > datetime('now', ?) ORDER BY id DESC LIMIT 1")
+          .bind(phone, '-' + MERGE_MINUTES + ' minutes')
+          .first();
     if (recent) {
       const merged = message && message !== recent.message ? ((recent.message ? recent.message + '\n' : '') + message).slice(0, 1000) : recent.message;
       await env.DB

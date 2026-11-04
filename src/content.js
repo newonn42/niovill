@@ -69,6 +69,18 @@ export const GROUPS = [
     ]
   },
   {
+    title: '구글 검색 · 영어 페이지',
+    fields: [
+      { key: 'priceRange', label: '가격대 (구글 검색 결과에 표시)', type: 'text', max: 40, def: '월 32만~40만 원' },
+      { key: 'googleMap', label: '구글 지도 링크 (구글 비즈니스 프로필 → 공유)', type: 'url', max: 300, def: '', help: '비워 두면 버튼이 안 보입니다' },
+      { key: 'googleReview', label: '구글 리뷰 보기 링크', type: 'url', max: 300, def: '', help: '비워 두면 버튼이 안 보입니다' },
+      { key: 'enPricePremium', label: '영어 가격 ① 프리미엄 외창', type: 'text', max: 40, def: 'KRW 400,000~ / month' },
+      { key: 'enPriceOuter', label: '영어 가격 ② 외창', type: 'text', max: 40, def: 'KRW 340,000~380,000 / month' },
+      { key: 'enPriceInner', label: '영어 가격 ③ 내창', type: 'text', max: 40, def: 'KRW 320,000~340,000 / month' },
+      { key: 'enDeposit', label: '영어 보증금 안내', type: 'text', max: 60, def: 'Please ask us' }
+    ]
+  },
+  {
     title: '오시는 길',
     fields: [
       { key: 'building', label: '건물 사진 (선택)', type: 'photo', alt: '건물 외관' },
@@ -178,7 +190,7 @@ export function applyContent(rw, values, photos) {
         const ver = photos[k];
         if (!ver) return;
         const f = FIELDS[k];
-        const alt = (v.siteName || '') + ' ' + (f && f.alt ? f.alt : '');
+        const alt = [v.siteArea, v.siteName, f && f.alt ? f.alt : ''].filter(Boolean).join(' ');
         el.removeAttribute('hidden');
         el.setInnerContent('<img src="/media/' + esc(k) + '?v=' + esc(ver) + '" alt="' + esc(alt.trim()) + '"' + (k === 'hero' ? '' : ' loading="lazy"') + '>', { html: true });
       }
@@ -186,7 +198,22 @@ export function applyContent(rw, values, photos) {
     .on('[data-href]', {
       element(el) {
         const k = el.getAttribute('data-href');
-        if (v[k]) el.setAttribute('href', v[k]);
+        if (v[k]) {
+          el.setAttribute('href', v[k]);
+          if (el.hasAttribute('data-optional')) el.removeAttribute('hidden');
+        } else if (el.hasAttribute('data-optional')) {
+          el.setAttribute('hidden', '');
+        }
+      }
+    })
+    // 제목·설명 글에 상호 넣기: data-tpl="{site} | ..."
+    .on('[data-tpl]', {
+      element(el) {
+        const raw = el.getAttribute('data-tpl')
+          .replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
+        const t = raw.replace(/\{site\}/g, v.siteName || '');
+        if (el.tagName === 'title') el.setInnerContent(t);
+        else el.setAttribute('content', t);
       }
     })
     .on('[data-tel]', {
@@ -196,6 +223,42 @@ export function applyContent(rw, values, photos) {
       }
     });
   return rw;
+}
+
+/* ── 검색 정보: 대표 주소 · 구조화 데이터 · 공유 미리보기 ── */
+const jsonSafe = (o) => JSON.stringify(o).replace(/</g, '\\u003c');
+
+export function applySeo(rw, values, photos, origin, path) {
+  const v = values;
+  const url = origin + path;
+  const hero = photos.hero ? origin + '/media/hero?v=' + photos.hero : '';
+  const biz = {
+    '@context': 'https://schema.org',
+    '@type': 'LodgingBusiness',
+    name: v.siteName,
+    url: origin + '/',
+    telephone: v.phone,
+    priceRange: v.priceRange,
+    address: { '@type': 'PostalAddress', streetAddress: [v.addr1, v.addr2].filter(Boolean).join(' '), addressCountry: 'KR' },
+    amenityFeature: String(v.introChips || '').split('\n').filter(Boolean).map((n) => ({ '@type': 'LocationFeatureSpecification', name: n, value: true }))
+  };
+  if (hero) biz.image = [hero];
+  const same = [v.googleMap, v.mapLink].filter(Boolean);
+  if (same.length) biz.sameAs = same;
+  const graph = [biz];
+  if (path === '/' && Array.isArray(v.faq) && v.faq.length) {
+    graph.push({
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: v.faq.map((it) => ({ '@type': 'Question', name: it.q, acceptedAnswer: { '@type': 'Answer', text: it.a } }))
+    });
+  }
+  return rw
+    .on('script[data-ld]', { element(el) { el.setInnerContent(jsonSafe(graph.length === 1 ? graph[0] : graph), { html: true }); } })
+    .on('link[data-canon]', { element(el) { el.setAttribute('href', url); } })
+    .on('link[data-alt]', { element(el) { el.setAttribute('href', origin + el.getAttribute('data-alt')); } })
+    .on('meta[data-og="url"]', { element(el) { el.setAttribute('content', url); } })
+    .on('meta[data-og="image"]', { element(el) { if (hero) el.setAttribute('content', hero); else el.remove(); } });
 }
 
 /* ── 사진 보내기 (/media/키) ── */
