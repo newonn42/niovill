@@ -163,7 +163,7 @@ img { max-width: 100%; display: block; }
   background: var(--card); border-top: 1px solid var(--line);
 }
 .contact-inner {
-  max-width: 480px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1.7fr) repeat(3, minmax(0, 1fr)); gap: 6px; align-items: center;
+  max-width: 480px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)); gap: 6px; align-items: center;
   padding: 8px 12px calc(10px + env(safe-area-inset-bottom));
 }
 .contact a {
