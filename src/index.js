@@ -7,6 +7,7 @@
 import { handleHome, isFull, PAGE_HEADERS } from './home.js';
 import { handleAdminApi } from './admin-api.js';
 import { handleApply } from './apply-api.js';
+import { ensureSchema } from './schema.js';
 
 async function health(env) {
   const body = { ok: true, db: false, full: false };
@@ -14,6 +15,9 @@ async function health(env) {
     if (env.DB) {
       body.full = await isFull(env.DB);
       body.db = true;
+      const { results } = await env.DB.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all();
+      const have = new Set((results || []).map((r) => r.name));
+      body.missing = ['admins', 'sessions', 'login_fails', 'settings', 'inquiries', 'push_subs'].filter((t) => !have.has(t));
     }
   } catch (e) {
     body.db = false;
@@ -31,6 +35,8 @@ async function health(env) {
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
+    // 데이터를 쓰는 주소에서만 표 준비 (파일만 보내는 요청은 바로 통과)
+    if (url.pathname === '/' || url.pathname.startsWith('/api/')) await ensureSchema(env.DB);
     if (request.method === 'GET' && url.pathname === '/') return handleHome(request, env);
     if (request.method === 'GET' && url.pathname === '/api/health') return health(env);
     if (url.pathname === '/api/apply') return handleApply(request, env, ctx);
