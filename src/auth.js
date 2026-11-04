@@ -1,6 +1,6 @@
 /* 관리자 로그인 · 비밀번호 · 로그인 유지(세션) · 실패 잠금 */
 
-const ITER = 20000; // 무료 요금제 CPU 한도 안에서 안전한 반복 횟수
+const ITER = 8000; // 무료 요금제 CPU 한도(요청당 10ms) 안에서 안전한 반복 횟수 (기존 저장값은 각자 저장된 횟수로 확인)
 const SESSION_DAYS = 30;
 const MAX_FAILS = 5;
 const LOCK_MINUTES = 10;

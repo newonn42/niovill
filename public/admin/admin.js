@@ -12,8 +12,13 @@
       opt.body = JSON.stringify(body);
     }
     return fetch('/api/admin/' + path, opt).then(function (res) {
-      return res.json().catch(function () { return { ok: false, error: '잠시 후 다시 시도해 주세요' }; })
-        .then(function (j) { j.status = res.status; return j; });
+      return res.json().catch(function () { return { ok: false, error: '잠시 후 다시 시도해 주세요', raw: true }; })
+        .then(function (j) {
+          j.status = res.status;
+          // 서버 오류는 원인 확인용 코드를 붙여 보여 줍니다 (A: 서버 처리 오류, B: 응답 형식 오류)
+          if (!j.ok && res.status >= 500) j.error = (j.error || '잠시 후 다시 시도해 주세요') + ' (오류 ' + (j.raw ? 'B' : 'A') + res.status + ')';
+          return j;
+        });
     }, function () {
       return { ok: false, error: '인터넷 연결을 확인해 주세요', status: 0 };
     });
