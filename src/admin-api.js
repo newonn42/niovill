@@ -7,6 +7,7 @@ import { isFull } from './home.js';
 import { ROOM_TYPES, PERIODS } from './apply-api.js';
 import { TOKEN_RE, tgCall, getSetting, setSetting, getChats, sendToAll } from './telegram.js';
 import { getVapid, pushToAll, fromB64u } from './push.js';
+import { GROUPS, PHOTO_KEYS, validate, loadContent, loadPhotoVersions } from './content.js';
 
 const KEEP_DAYS = 90; // 완료 후 보관 기간
 
@@ -21,12 +22,12 @@ function json(body, status = 200, extraHeaders) {
 }
 const fail = (msg, status = 400) => json({ ok: false, error: msg }, status);
 
-async function readBody(request) {
+async function readBody(request, max = 70000) {
   const type = request.headers.get('Content-Type') || '';
   // JSON 요청만 받습니다 (다른 사이트에서 몰래 보내는 요청 차단)
   if (!type.includes('application/json')) throw new Error('bad type');
   const text = await request.text();
-  if (text.length > 20000) throw new Error('too big');
+  if (text.length > max) throw new Error('too big');
   const body = JSON.parse(text || '{}');
   if (!body || typeof body !== 'object') throw new Error('bad body');
   return body;
@@ -206,6 +207,54 @@ async function newCount(env) {
   return r ? r.n : 0;
 }
 
+/* ── 로그인 후: 홈페이지 내용 · 사진 ── */
+
+async function contentGet(env) {
+  const { values } = await loadContent(env.DB);
+  const photos = await loadPhotoVersions(env.DB);
+  const last = await env.DB
+    .prepare("SELECT updated_by, strftime('%m/%d %H:%M', updated_at, '+9 hours') AS at FROM settings WHERE key = 'content'")
+    .first();
+  return json({ ok: true, groups: GROUPS, values, photos, last: last || null });
+}
+
+async function contentSave(env, admin, body) {
+  const checked = validate(body.values);
+  if (checked.error) return fail(checked.error);
+  const { saved } = await loadContent(env.DB);
+  const merged = Object.assign({}, saved, checked.values);
+  const text = JSON.stringify(merged);
+  if (text.length > 60000) return fail('내용이 너무 깁니다');
+  await setSetting(env.DB, 'content', text, admin.name);
+  return json({ ok: true });
+}
+
+const MAX_PHOTO = 1500000; // 사진 한 장 최대 약 1.5MB (휴대폰에서 줄여서 올림)
+
+async function photoSave(env, admin, body) {
+  const key = String(body.key || '');
+  if (!PHOTO_KEYS.includes(key)) return fail('사진 자리를 확인해 주세요');
+  const mime = ['image/jpeg', 'image/webp', 'image/png'].includes(body.mime) ? body.mime : '';
+  const data = typeof body.data === 'string' ? body.data : '';
+  if (!mime || !/^[A-Za-z0-9+/]+=*$/.test(data)) return fail('사진 형식이 맞지 않습니다');
+  if (data.length * 0.75 > MAX_PHOTO) return fail('사진이 너무 큽니다. 다른 사진으로 해 주세요');
+  await env.DB
+    .prepare(
+      "INSERT INTO photos (key, mime, data, updated_by, updated_at) VALUES (?, ?, ?, ?, datetime('now')) " +
+        'ON CONFLICT(key) DO UPDATE SET mime = excluded.mime, data = excluded.data, updated_by = excluded.updated_by, updated_at = excluded.updated_at'
+    )
+    .bind(key, mime, data, admin.name)
+    .run();
+  return json({ ok: true });
+}
+
+async function photoDelete(env, body) {
+  const key = String(body.key || '');
+  if (!PHOTO_KEYS.includes(key)) return fail('사진 자리를 확인해 주세요');
+  await env.DB.prepare('DELETE FROM photos WHERE key = ?').bind(key).run();
+  return json({ ok: true });
+}
+
 /* ── 로그인 후: 휴대폰 알림 ── */
 
 async function pushGet(env, admin) {
@@ -374,7 +423,8 @@ export async function handleAdminApi(request, env, path) {
     if (request.method === 'POST') {
       let body;
       try {
-        body = await readBody(request);
+        // 사진 올리기만 큰 요청 허용 (약 2MB)
+        body = await readBody(request, path === 'photo' ? 2100000 : 70000);
       } catch (e) {
         return fail('요청 형식이 맞지 않습니다', 415);
       }
@@ -387,6 +437,9 @@ export async function handleAdminApi(request, env, path) {
       if (path === 'status') return await statusSet(env, admin, body);
       if (path === 'inquiries/update') return await inquiryUpdate(env, admin, body);
       if (path === 'inquiries/delete') return await inquiryDelete(env, body);
+      if (path === 'content') return await contentSave(env, admin, body);
+      if (path === 'photo') return await photoSave(env, admin, body);
+      if (path === 'photo/delete') return await photoDelete(env, body);
       if (path === 'push/subscribe') return await pushSubscribe(env, admin, body);
       if (path === 'push/unsubscribe') return await pushUnsubscribe(env, body);
       if (path === 'push/test') return await pushTest(env, admin);
@@ -408,6 +461,7 @@ export async function handleAdminApi(request, env, path) {
       if (path === 'inquiries') return await inquiriesGet(env, url);
       if (path === 'telegram') return await tgGet(env);
       if (path === 'push') return await pushGet(env, admin);
+      if (path === 'content') return await contentGet(env);
       if (path === 'admins') return await adminsGet(env, admin);
     }
     return fail('없는 기능입니다', 404);

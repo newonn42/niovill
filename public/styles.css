@@ -123,6 +123,7 @@ img { max-width: 100%; display: block; }
   color: var(--ink-2); font-size: 13px; overflow: hidden;
 }
 .room-photo img { width: 100%; height: 100%; object-fit: cover; }
+.map-photo { height: 200px; border-radius: 14px; }
 .room-body { padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
 .room-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .room-name { font-size: 17px; font-weight: 800; margin: 0; }

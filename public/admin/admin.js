@@ -90,6 +90,8 @@
     for (var i = 0; i < tabs.length; i++) tabs[i].setAttribute('aria-selected', tabs[i].getAttribute('data-tab') === name ? 'true' : 'false');
     $('tabInbox').hidden = name !== 'inbox';
     $('tabStatus').hidden = name !== 'status';
+    $('tabContent').hidden = name !== 'content';
+    if (name === 'content') loadContent();
     if (name === 'inbox') loadInbox(currentFilter);
     $('tabSettings').hidden = name !== 'settings';
     if (name === 'settings') { loadAdmins(); loadTg(); loadPush(); }
@@ -245,6 +247,166 @@
     card.appendChild(foot);
     return card;
   }
+
+  /* ── 내용 · 사진 ── */
+  var contentFields = [];   // [{key, type, get()}]
+  function contentMsg(err, ok) {
+    $('contentError').textContent = err || ''; $('contentError').hidden = !err;
+    $('contentOk').textContent = ok || ''; $('contentOk').hidden = !ok;
+  }
+  function loadContent() {
+    contentMsg();
+    return api('content').then(function (r) {
+      if (needLogin(r)) return;
+      if (!r.ok) { contentMsg(r.error); return; }
+      buildContent(r);
+      $('contentLast').textContent = r.last ? '마지막 저장: ' + r.last.updated_by + ' · ' + r.last.at : '';
+    });
+  }
+  function fieldInput(f, value) {
+    var wrap = el('div', 'field');
+    var id = 'c_' + f.key;
+    var lab = el('label', '', f.label);
+    lab.htmlFor = id;
+    wrap.appendChild(lab);
+    var input;
+    if (f.type === 'lines') {
+      input = el('textarea');
+      input.rows = 4;
+    } else {
+      input = el('input');
+      input.type = f.type === 'url' ? 'url' : f.type === 'tel' ? 'tel' : 'text';
+      input.maxLength = f.max || 100;
+    }
+    input.id = id;
+    input.value = value == null ? '' : value;
+    if (f.def && typeof f.def === 'string') input.placeholder = f.def.split('\n')[0];
+    wrap.appendChild(input);
+    if (f.help) wrap.appendChild(el('p', 'help', f.help));
+    contentFields.push({ key: f.key, get: function () { return input.value; } });
+    return wrap;
+  }
+  function faqEditor(f, items) {
+    var box = el('div', 'field');
+    box.appendChild(el('label', '', f.label));
+    var list = el('div');
+    list.style.display = 'flex'; list.style.flexDirection = 'column'; list.style.gap = '8px';
+    box.appendChild(list);
+    function addRow(q, a) {
+      var row = el('div', 'a-faq');
+      var qi = el('input'); qi.maxLength = 60; qi.placeholder = '질문'; qi.value = q || '';
+      var ai = el('textarea'); ai.maxLength = 300; ai.placeholder = '답'; ai.value = a || '';
+      var del = el('button', 'a-danger', '이 질문 빼기'); del.type = 'button';
+      del.addEventListener('click', function () { row.remove(); addBtn.hidden = list.children.length >= f.maxItems; });
+      row.appendChild(qi); row.appendChild(ai); row.appendChild(del);
+      row._get = function () { return { q: qi.value, a: ai.value }; };
+      list.appendChild(row);
+      addBtn.hidden = list.children.length >= f.maxItems;
+    }
+    var addBtn = el('button', 'a-small', '+ 질문 추가'); addBtn.type = 'button';
+    addBtn.addEventListener('click', function () { addRow('', ''); });
+    (items || []).forEach(function (it) { addRow(it.q, it.a); });
+    box.appendChild(addBtn);
+    contentFields.push({ key: f.key, get: function () { return Array.prototype.map.call(list.children, function (r) { return r._get(); }); } });
+    return box;
+  }
+  function photoSlot(f, ver) {
+    var box = el('div', 'a-photo');
+    box.appendChild(el('span', 'label', f.label));
+    var pic = el('div', 'a-photo-box');
+    function show(v) {
+      pic.textContent = '';
+      if (v) { var img = el('img'); img.src = '/media/' + f.key + '?v=' + v; img.alt = f.label; pic.appendChild(img); }
+      else pic.textContent = '사진 없음 (' + (f.alt || '') + ')';
+      delBtn.hidden = !v;
+    }
+    var btns = el('div', 'a-photo-btns');
+    var up = el('label', 'a-small', '사진 올리기');
+    var file = el('input'); file.type = 'file'; file.accept = 'image/*';
+    up.appendChild(file);
+    var delBtn = el('button', 'a-small', '사진 삭제'); delBtn.type = 'button';
+    var note = el('small', 'help', '');
+    btns.appendChild(up); btns.appendChild(delBtn); btns.appendChild(note);
+    box.appendChild(pic); box.appendChild(btns);
+    file.addEventListener('change', function () {
+      var fl = file.files && file.files[0];
+      file.value = '';
+      if (!fl) return;
+      note.textContent = '줄이는 중…';
+      shrinkImage(fl).then(function (img) {
+        note.textContent = '올리는 중…';
+        return api('photo', { key: f.key, mime: img.mime, data: img.data });
+      }).then(function (r) {
+        if (needLogin(r)) return;
+        if (!r.ok) { note.textContent = r.error; return; }
+        note.textContent = '반영됨';
+        show(String(Date.now()));
+      }).catch(function () { note.textContent = '이 사진은 열 수 없습니다. 다른 사진으로 해 주세요'; });
+    });
+    var armed = false;
+    delBtn.addEventListener('click', function () {
+      if (!armed) { armed = true; delBtn.textContent = '한 번 더 누르면 삭제'; return; }
+      armed = false; delBtn.textContent = '사진 삭제';
+      api('photo/delete', { key: f.key }).then(function (r) { if (needLogin(r)) return; if (r.ok) { show(''); note.textContent = '삭제됨'; } });
+    });
+    show(ver);
+    return box;
+  }
+  function buildContent(r) {
+    var form = $('contentForm');
+    form.textContent = '';
+    contentFields = [];
+    r.groups.forEach(function (g) {
+      var card = el('section', 'a-card');
+      card.appendChild(el('h2', '', g.title));
+      g.fields.forEach(function (f) {
+        if (f.type === 'photo') card.appendChild(photoSlot(f, r.photos[f.key]));
+        else if (f.type === 'faq') card.appendChild(faqEditor(f, r.values[f.key]));
+        else card.appendChild(fieldInput(f, r.values[f.key]));
+      });
+      form.appendChild(card);
+    });
+  }
+  // 휴대폰 사진을 긴 쪽 1600px JPEG로 줄임 (약 0.2~0.6MB)
+  function shrinkImage(file) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        var tries = [[1600, 0.82], [1280, 0.75], [1024, 0.7]];
+        (function attempt(i) {
+          var max = tries[i][0], q = tries[i][1];
+          var scale = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+          var c = document.createElement('canvas');
+          c.width = Math.round(img.naturalWidth * scale); c.height = Math.round(img.naturalHeight * scale);
+          var ctx = c.getContext('2d');
+          ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+          ctx.drawImage(img, 0, 0, c.width, c.height);
+          var dataUrl = c.toDataURL('image/jpeg', q);
+          var b64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
+          if (b64.length * 0.75 > 1400000 && i < tries.length - 1) return attempt(i + 1);
+          URL.revokeObjectURL(url);
+          resolve({ mime: 'image/jpeg', data: b64 });
+        })(0);
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('decode')); };
+      img.src = url;
+    });
+  }
+  $('contentSave').addEventListener('click', function () {
+    var btn = this;
+    var values = {};
+    contentFields.forEach(function (f) { values[f.key] = f.get(); });
+    contentMsg();
+    lock(btn, true);
+    api('content', { values: values }).then(function (r) {
+      lock(btn, false);
+      if (needLogin(r)) return;
+      if (!r.ok) { contentMsg(r.error); return; }
+      contentMsg('', '저장했습니다. 홈페이지에 바로 반영됩니다.');
+      loadContent().then(function () { contentMsg('', '저장했습니다. 홈페이지에 바로 반영됩니다.'); });
+    });
+  });
 
   /* ── 휴대폰 알림 ── */
   var ua = navigator.userAgent || '';

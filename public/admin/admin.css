@@ -18,7 +18,7 @@
 .a-counts span { display: block; font-size: 12px; color: var(--muted); }
 .a-counts strong { font-size: 18px; }
 
-.a-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: var(--card); border-bottom: 1px solid var(--line); }
+.a-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); background: var(--card); border-bottom: 1px solid var(--line); }
 .a-tabs button {
   border: 0; background: none; font-family: inherit; font-size: 15px; font-weight: 700; color: var(--muted);
   padding: 14px 0; min-height: 48px; border-bottom: 3px solid transparent; cursor: pointer;
@@ -93,3 +93,18 @@ summary.a-link::-webkit-details-marker { display: none; }
 #pushIos, #pushControls { display: flex; flex-direction: column; gap: 10px; }
 #pushIos[hidden], #pushControls[hidden] { display: none; }
 .a-card h2 .opt { font-size: 13px; font-weight: 400; color: var(--muted); }
+
+/* 내용 수정 */
+#contentForm .a-card { gap: 14px; }
+.a-photo { display: flex; flex-direction: column; gap: 8px; }
+.a-photo .label { font-size: 14px; font-weight: 700; }
+.a-photo-box { height: 150px; border-radius: 12px; background: var(--ph); display: flex; align-items: center; justify-content: center; color: var(--ink-2); font-size: 13px; overflow: hidden; }
+.a-photo-box img { width: 100%; height: 100%; object-fit: cover; }
+.a-photo-btns { display: flex; gap: 8px; align-items: center; }
+.a-photo-btns label { cursor: pointer; }
+.a-photo-btns input[type=file] { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.a-faq { display: flex; flex-direction: column; gap: 6px; padding: 10px; background: var(--bg); border-radius: 10px; }
+.a-faq input, .a-faq textarea { min-height: 44px; border: 1px solid var(--line-2); border-radius: 10px; padding: 8px 10px; font-family: inherit; font-size: 15px; width: 100%; background: var(--card); }
+.a-faq textarea { min-height: 70px; resize: vertical; }
+.a-savebar { position: sticky; bottom: 0; background: var(--bg); padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); margin-top: 16px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; z-index: 5; }
+.a-savebar .a-last { text-align: center; }

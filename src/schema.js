@@ -53,6 +53,13 @@ const SCHEMA = [
     device TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     last_ok TEXT
+  )`,
+  `CREATE TABLE IF NOT EXISTS photos (
+    key TEXT PRIMARY KEY,
+    mime TEXT NOT NULL,
+    data TEXT NOT NULL,
+    updated_by TEXT,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
   )`
 ];
 
