@@ -82,12 +82,15 @@ export const GROUPS = [
   {
     title: '주변 생활 안내 (/guide 페이지)',
     fields: [
-      { key: 'guideIntro', label: '첫 문장', type: 'text', max: 120, def: '니오빌원룸텔은 계양구청 바로 앞, 인천1호선 임학역과 계산역 사이에 있어 출퇴근과 생활이 편리합니다.' },
-      { key: 'guideTransit', label: '교통 (한 줄에 하나, "이름: 내용")', type: 'lines', maxLines: 8, max: 100, def: '임학역 (인천1호선): 도보 약 9분\n계산역 (인천1호선): 도보 약 18분\n자동차: 무료 주차 가능' },
-      { key: 'guideOffice', label: '관공서', type: 'lines', maxLines: 8, max: 100, def: '계양구청: 바로 앞\n계양경찰서: 임학역·계산역 주변\n계양우체국: 임학역·계산역 주변' },
+      { key: 'guideIntro', label: '첫 문장', type: 'text', max: 160, def: '니오빌원룸텔은 계양구청 바로 앞, 인천1호선 임학역과 계산역 사이에 있습니다. 지하철 한 번으로 공항철도·서울 지하철과 이어지고, 마트·공원·계양산이 가까워 혼자 살기 편한 동네입니다.' },
+      { key: 'guideFor', label: '이런 분께 좋아요', type: 'lines', maxLines: 8, max: 100, def: '계양구청·관공서 근처 직장인: 걸어서 출퇴근\n공항·항공 일하시는 분: 계양역(공항철도)까지 지하철 3정거장\n서울로 출퇴근하시는 분: 부평구청역(7호선)·부평역(1호선) 환승\n경인여자대학교 학생: 계산역 주변\n차를 가지고 계신 분: 무료 주차, 계양IC 인근' },
+      { key: 'guideTransit', label: '지하철 · 자동차', type: 'lines', maxLines: 10, max: 100, def: '임학역 (인천1호선): 도보 약 9분\n계산역 (인천1호선): 도보 약 18분\n계양역 · 공항철도 환승: 임학역에서 3정거장 (김포공항 · 서울역 · 인천공항 방면)\n부평구청역 · 서울 7호선 환승: 임학역에서 5정거장\n부평역 · 서울 1호선 환승: 임학역에서 7정거장\n인천시청역 · 인천2호선 환승: 임학역에서 11정거장\n자동차: 무료 주차 · 수도권제1순환고속도로 계양IC 인근' },
+      { key: 'guideOffice', label: '관공서 · 은행', type: 'lines', maxLines: 8, max: 100, def: '계양구청: 바로 앞\n계양경찰서 · 계양우체국: 임학역·계산역 주변\n계산119안전센터: 계산역 주변\n기업은행 · 국민은행: 계산역 주변' },
       { key: 'guideShop', label: '장보기', type: 'lines', maxLines: 8, max: 100, def: '롯데마트 계양점: 계산역 주변\n홈플러스 계산점: 계산역 주변' },
-      { key: 'guideLife', label: '학교 · 운동 · 문화', type: 'lines', maxLines: 8, max: 100, def: '경인여자대학교: 계산역 주변\n계양도서관: 계산역 주변\n계양체육관: 임학역 주변' },
-      { key: 'guideMore', label: '병원 · 약국 · 편의점 · 버스 등 (선택)', type: 'lines', maxLines: 8, max: 100, def: '', help: '비워 두면 이 묶음은 안 보입니다. 예: CU 편의점: 건물 1층' }
+      { key: 'guideMed', label: '병원', type: 'lines', maxLines: 8, max: 100, def: '인천세종병원 (종합병원): 계양구 계양문화로\n임학역 · 계산역 주변: 동네 병·의원 다수\n응급 상황: 119' },
+      { key: 'guideWalk', label: '산책 · 운동', type: 'lines', maxLines: 8, max: 100, def: '계양산: 해발 395m, 강화도를 빼면 인천에서 가장 높은 산 · 계산역에서 등산로 입구가 가까움 · 9개 코스 50분~2시간\n계양산성: 계양산 역사 유적 · 임학공원에서 무장애길로 연결\n계양체육관: 임학역 주변\n계산국민체육센터: 계산역 주변' },
+      { key: 'guideLife', label: '학교 · 문화', type: 'lines', maxLines: 8, max: 100, def: '경인여자대학교: 계산역 주변\n계양도서관: 계산역 주변\n계양문화회관: 계산역 주변' },
+      { key: 'guideMore', label: '생활 편의 (편의점·카페·맛집 등, 선택)', type: 'lines', maxLines: 8, max: 100, def: '', help: '비워 두면 이 묶음은 안 보입니다. 예: CU 편의점: 건물 1층' }
     ]
   },
   {

@@ -292,3 +292,9 @@ body.is-full .open-only { display: none; }
 /* 맨 아래 링크 누르기 쉽게 */
 .foot a { display: inline-block; padding: 6px 2px; }
 .done .btn { width: 100%; flex: none; }
+
+/* 주변 생활 안내: 긴 설명은 아래로 */
+.info.guide div { flex-direction: column; gap: 2px; align-items: flex-start; }
+.info.guide dt { color: var(--ink); font-weight: 700; }
+.info.guide dd { text-align: left; font-weight: 400; color: var(--ink-2); line-height: 1.6; }
+.guide-note { padding: 16px 16px 0; text-align: left; }
