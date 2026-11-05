@@ -142,6 +142,8 @@ async function statusSet(env, admin, body) {
 async function purgeOld(db) {
   // 완료 후 90일 지난 신청은 자동 삭제
   await db.prepare("DELETE FROM inquiries WHERE status = 'done' AND done_at < datetime('now', ?)").bind('-' + KEEP_DAYS + ' days').run();
+  // 완료 처리 안 된 신청도 1년이 지나면 삭제 (개인정보처리방침과 같음)
+  await db.prepare("DELETE FROM inquiries WHERE created_at < datetime('now', '-365 days')").run();
 }
 
 async function inquiriesGet(env, url) {

@@ -12,6 +12,7 @@ export const GROUPS = [
       { key: 'phone', label: '전화번호 (전화 버튼)', type: 'tel', max: 20, def: '032-542-0066' },
       { key: 'kakaoLink', label: '카카오톡 링크 (오픈채팅 또는 채널)', type: 'url', max: 200, def: 'https://open.kakao.com/o/s2f3yqRi' },
       { key: 'blogUrl', label: '네이버 블로그 주소 (최근 소식 자동 표시)', type: 'url', max: 200, def: 'https://m.blog.naver.com/niovill_stay', help: '비워 두면 최근 소식이 안 보입니다' },
+      { key: 'privacyOfficer', label: '개인정보 보호책임자 (개인정보처리방침에 표시)', type: 'text', max: 20, def: '엄경환' },
       { key: 'bizInfo', label: '사업자 정보 (맨 아래)', type: 'text', max: 120, def: '대표 [이름] · 사업자등록번호 [000-00-00000]', help: '예: 대표 홍길동 · 사업자등록번호 123-45-67890' }
     ]
   },
@@ -81,6 +82,8 @@ export const GROUPS = [
     title: '구글 검색 · 영어 페이지',
     fields: [
       { key: 'priceRange', label: '가격대 (구글 검색 결과에 표시)', type: 'text', max: 40, def: '월 32만~40만 원' },
+      { key: 'googleVerify', label: '구글 서치콘솔 확인 코드', type: 'text', max: 100, def: '', help: '서치콘솔 → HTML 태그에서 content="…" 안의 글자만 붙여 넣기' },
+      { key: 'naverVerify', label: '네이버 서치어드바이저 확인 코드', type: 'text', max: 100, def: '', help: '서치어드바이저 → HTML 태그에서 content="…" 안의 글자만 붙여 넣기' },
       { key: 'googleMap', label: '구글 지도 링크 (구글 비즈니스 프로필 → 공유)', type: 'url', max: 300, def: '', help: '비워 두면 버튼이 안 보입니다' },
       { key: 'googleReview', label: '구글 리뷰 보기 링크', type: 'url', max: 300, def: '', help: '비워 두면 버튼이 안 보입니다' },
       { key: 'enPricePremium', label: '영어 가격 ① 프리미엄 외창', type: 'text', max: 40, def: 'KRW 400,000~ / month' },
@@ -295,6 +298,13 @@ export function applySeo(rw, values, photos, origin, path) {
   }
   return rw
     .on('script[data-ld]', { element(el) { el.setInnerContent(jsonSafe(graph.length === 1 ? graph[0] : graph), { html: true }); } })
+    .on('meta[data-verify]', {
+      element(el) {
+        const code = String(v[el.getAttribute('data-verify')] || '').replace(/[^A-Za-z0-9_\-]/g, '');
+        if (code) el.setAttribute('content', code);
+        else el.remove();
+      }
+    })
     .on('link[data-canon]', { element(el) { el.setAttribute('href', url); } })
     .on('link[data-alt]', { element(el) { el.setAttribute('href', origin + el.getAttribute('data-alt')); } })
     .on('meta[data-og="url"]', { element(el) { el.setAttribute('content', url); } })

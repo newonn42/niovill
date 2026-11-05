@@ -41,7 +41,12 @@ function notify(ctx, env, request, inq) {
     const tg = sendToAll(env, inquiryText(inq, { roomTypes: ROOM_TYPES, periods: PERIODS }, site + '/admin/')).catch((e) =>
       console.log('telegram notify failed:', e && e.message)
     );
-    await Promise.all([push, tg]);
+    // 보관 기간 지난 신청 정리 (완료 후 90일, 늦어도 1년)
+    const purge = env.DB.batch([
+      env.DB.prepare("DELETE FROM inquiries WHERE status = 'done' AND done_at < datetime('now', '-90 days')"),
+      env.DB.prepare("DELETE FROM inquiries WHERE created_at < datetime('now', '-365 days')")
+    ]).catch((e) => console.log('purge failed:', e && e.message));
+    await Promise.all([push, tg, purge]);
   })().catch((e) => console.log('notify failed:', e && e.message));
   if (ctx && typeof ctx.waitUntil === 'function') ctx.waitUntil(job);
 }
