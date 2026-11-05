@@ -12,6 +12,7 @@ export const GROUPS = [
       { key: 'phone', label: '전화번호 (전화 버튼)', type: 'tel', max: 20, def: '032-542-0066' },
       { key: 'kakaoLink', label: '카카오톡 링크 (오픈채팅 또는 채널)', type: 'url', max: 200, def: 'https://open.kakao.com/o/s2f3yqRi' },
       { key: 'blogUrl', label: '네이버 블로그 주소 (최근 소식 자동 표시)', type: 'url', max: 200, def: 'https://m.blog.naver.com/niovill_stay', help: '비워 두면 최근 소식이 안 보입니다' },
+      { key: 'applyDone', label: '신청 완료 화면 안내 문구', type: 'text', max: 80, def: '늦은 시간에 접수된 신청은 다음 날 오전에 연락드립니다' },
       { key: 'privacyOfficer', label: '개인정보 보호책임자 (개인정보처리방침에 표시)', type: 'text', max: 20, def: '엄경환' },
       { key: 'bizInfo', label: '사업자 정보 (맨 아래)', type: 'text', max: 120, def: '대표 [이름] · 사업자등록번호 [000-00-00000]', help: '예: 대표 홍길동 · 사업자등록번호 123-45-67890' }
     ]
@@ -22,7 +23,7 @@ export const GROUPS = [
       { key: 'hero', label: '대표 사진', type: 'photo', alt: '외관 또는 대표 방' },
       { key: 'introTitle', label: '큰 제목', type: 'text', max: 40, def: '임학역 도보 9분, 계양구청 앞 원룸텔' },
       { key: 'introDesc', label: '설명 한 줄', type: 'text', max: 80, def: '전 객실 개인 화장실 · 혼자 지내기 편한 깔끔한 방' },
-      { key: 'introChips', label: '장점 (한 줄에 하나, 최대 6개)', type: 'lines', maxLines: 6, max: 20, def: '쌀·라면·커피 무료\n세탁기·건조기 무료\n무료 주차\n세스코 정기 방역' }
+      { key: 'introChips', label: '장점 (한 줄에 하나, 최대 6개)', type: 'lines', maxLines: 6, max: 20, def: '쌀·라면·시리얼·커피 무료\n세탁기·건조기 무료\n무료 주차\n세스코 정기 방역' }
     ]
   },
   {
@@ -51,7 +52,7 @@ export const GROUPS = [
       { key: 'common', label: '④ 사진', type: 'photo', alt: '공용공간' },
       { key: 'nameCommon', label: '④ 이름', type: 'text', max: 20, def: '공용공간' },
       { key: 'priceCommon', label: '④ 가격', type: 'text', max: 30, def: '무료' },
-      { key: 'featCommon', label: '④ 설명', type: 'text', max: 60, def: '공용주방 · 밥·라면·커피 · 세탁실' }
+      { key: 'featCommon', label: '④ 설명', type: 'text', max: 60, def: '공용주방 · 세탁실 · 쌀·라면·시리얼·원두커피' }
     ]
   },
   {
@@ -60,7 +61,7 @@ export const GROUPS = [
       { key: 'infoMin', label: '최소 입실', type: 'text', max: 40, def: '1개월' },
       { key: 'infoRent', label: '월세', type: 'text', max: 40, def: '선불 · 매월 입실일 기준' },
       { key: 'infoDeposit', label: '보증금', type: 'text', max: 40, def: '[보증금 안내]' },
-      { key: 'infoFree', label: '무료 제공', type: 'text', max: 40, def: '밥 · 라면 · 커피' },
+      { key: 'infoFree', label: '무료 제공', type: 'text', max: 40, def: '쌀 · 라면 · 시리얼 · 원두커피' },
       { key: 'infoSecurity', label: '보안', type: 'text', max: 40, def: '모든 방 개별 도어락' }
     ]
   },
@@ -79,9 +80,21 @@ export const GROUPS = [
     ]
   },
   {
+    title: '주변 생활 안내 (/guide 페이지)',
+    fields: [
+      { key: 'guideIntro', label: '첫 문장', type: 'text', max: 120, def: '니오빌원룸텔은 계양구청 바로 앞, 인천1호선 임학역과 계산역 사이에 있어 출퇴근과 생활이 편리합니다.' },
+      { key: 'guideTransit', label: '교통 (한 줄에 하나, "이름: 내용")', type: 'lines', maxLines: 8, max: 100, def: '임학역 (인천1호선): 도보 약 9분\n계산역 (인천1호선): 도보 약 18분\n자동차: 무료 주차 가능' },
+      { key: 'guideOffice', label: '관공서', type: 'lines', maxLines: 8, max: 100, def: '계양구청: 바로 앞\n계양경찰서: 임학역·계산역 주변\n계양우체국: 임학역·계산역 주변' },
+      { key: 'guideShop', label: '장보기', type: 'lines', maxLines: 8, max: 100, def: '롯데마트 계양점: 계산역 주변\n홈플러스 계산점: 계산역 주변' },
+      { key: 'guideLife', label: '학교 · 운동 · 문화', type: 'lines', maxLines: 8, max: 100, def: '경인여자대학교: 계산역 주변\n계양도서관: 계산역 주변\n계양체육관: 임학역 주변' },
+      { key: 'guideMore', label: '병원 · 약국 · 편의점 · 버스 등 (선택)', type: 'lines', maxLines: 8, max: 100, def: '', help: '비워 두면 이 묶음은 안 보입니다. 예: CU 편의점: 건물 1층' }
+    ]
+  },
+  {
     title: '구글 검색 · 영어 페이지',
     fields: [
       { key: 'priceRange', label: '가격대 (구글 검색 결과에 표시)', type: 'text', max: 40, def: '월 32만~40만 원' },
+      { key: 'seoDesc', label: '검색 결과 설명 (구글·네이버에 보이는 2줄)', type: 'text', max: 160, def: '인천 계양구 계산동 니오빌원룸텔. 임학역 도보 9분, 계양구청 앞. 전 객실 개인 화장실, 쌀·라면·시리얼·원두커피 무료, 무료 주차. 24시간 상담 신청.' },
       { key: 'googleVerify', label: '구글 서치콘솔 확인 코드', type: 'text', max: 100, def: '', help: '서치콘솔 → HTML 태그에서 content="…" 안의 글자만 붙여 넣기' },
       { key: 'naverVerify', label: '네이버 서치어드바이저 확인 코드', type: 'text', max: 100, def: '', help: '서치어드바이저 → HTML 태그에서 content="…" 안의 글자만 붙여 넣기' },
       { key: 'googleMap', label: '구글 지도 링크 (구글 비즈니스 프로필 → 공유)', type: 'url', max: 300, def: '', help: '비워 두면 버튼이 안 보입니다' },
@@ -90,6 +103,10 @@ export const GROUPS = [
       { key: 'enPriceOuter', label: '영어 가격 ② 외창', type: 'text', max: 40, def: 'KRW 340,000~380,000 / month' },
       { key: 'enPriceInner', label: '영어 가격 ③ 내창', type: 'text', max: 40, def: 'KRW 320,000~340,000 / month' },
       { key: 'enDeposit', label: '영어 보증금 안내', type: 'text', max: 60, def: 'Please ask us' },
+      { key: 'enMinStay', label: '영어 최소 입실', type: 'text', max: 40, def: '1 month' },
+      { key: 'enPayment', label: '영어 결제', type: 'text', max: 60, def: 'Monthly, in advance' },
+      { key: 'enWay', label: '영어 교통 (한 줄에 하나, "이름: 내용")', type: 'lines', maxLines: 6, max: 80, def: 'Imhak Station (Incheon Line 1): 9 min walk\nGyesan Station (Incheon Line 1): 18 min walk\nGyeyang-gu Office: Right in front\nParking: Free' },
+      { key: 'enAddress', label: '영어 주소 (구글 비즈니스 프로필 영어 주소와 맞추기)', type: 'text', max: 160, def: '6F, Bldg B, Donggu Plaza (Red Mall 2), 6 Gyesansae-ro 87beon-gil, Gyeyang-gu, Incheon' },
       { key: 'enPoints', label: '영어 장점 목록 (한 줄에 하나)', type: 'lines', maxLines: 12, max: 100, def: 'Fully furnished (washer, dryer, air conditioner, fridge, TV, desk, wardrobe, bathroom)\nStrict security and fire safety systems\nClose to Gyeyang-gu Office, Gyesan Station and Imhak Station\nThorough maintenance and cleaning (regular Cesco pest control)\nAffordable compared to nearby places\nDoor locks on the main entrance and every room\nLarger rooms and wider hallways than most goshiwons\nFree rice, ramen, cereal and coffee\nA quiet house with a small number of rooms\nFree parking' }
     ]
   },
@@ -98,7 +115,6 @@ export const GROUPS = [
     fields: [
       { key: 'building', label: '건물 사진 (선택)', type: 'photo', alt: '건물 외관' },
       { key: 'wayInfo', label: '교통 (한 줄에 하나, "이름: 내용")', type: 'lines', maxLines: 6, max: 60, def: '임학역 (인천1호선): 도보 약 9분\n계산역 (인천1호선): 도보 약 18분\n계양구청: 바로 앞\n주차: 무료 주차 가능' },
-      { key: 'nearInfo', label: '주변 생활 (한 줄에 하나, "이름: 내용")', type: 'lines', maxLines: 6, max: 100, def: '임학역 주변: 계양구청 · 계양경찰서 · 계양우체국 · 계양체육관\n계산역 주변: 롯데마트 계양점 · 홈플러스 계산점 · 경인여자대학교 · 계양도서관' },
       { key: 'addr1', label: '주소', type: 'text', max: 60, def: '인천 계양구 계산새로87번길 6' },
       { key: 'addr2', label: '상세 주소', type: 'text', max: 60, def: '동구프라자(레드몰2차) B동 6층' },
       { key: 'mapLink', label: '네이버 지도 링크', type: 'url', max: 500, def: 'https://map.naver.com/p/search/%EC%9D%B8%EC%B2%9C%20%EA%B3%84%EC%96%91%EA%B5%AC%20%EA%B3%84%EC%82%B0%EC%83%88%EB%A1%9C87%EB%B2%88%EA%B8%B8%206' }
@@ -180,6 +196,9 @@ export function applyContent(rw, values, photos) {
           el.setInnerContent(String(v.introChips || '').split('\n').filter(Boolean).map((t) => '<li>' + esc(t) + '</li>').join(''), { html: true });
         } else if (k === 'phoneText') {
           el.setInnerContent(String(v.phone || ''));
+        } else if (k === 'phoneIntl') {
+          const d = String(v.phone || '').replace(/[^0-9]/g, '');
+          el.setInnerContent(d.startsWith('0') ? '+82-' + d.slice(1).replace(/^(\d{1,2})(\d{3,4})(\d{4})$/, '$1-$2-$3') : String(v.phone || ''));
         } else if (Object.prototype.hasOwnProperty.call(v, k) && typeof v[k] === 'string') {
           el.setInnerContent(v[k]);
         }
@@ -195,6 +214,17 @@ export function applyContent(rw, values, photos) {
       element(el) {
         const lines = String(v[el.getAttribute('data-paras')] || '').split('\n').filter(Boolean);
         el.setInnerContent(lines.map((t) => esc(t)).join('<br>'), { html: true });
+      }
+    })
+    .on('[data-hide-empty]', {
+      element(el) {
+        if (!String(v[el.getAttribute('data-hide-empty')] || '').trim()) el.setAttribute('hidden', '');
+      }
+    })
+    .on('meta[data-seo]', {
+      element(el) {
+        const t = String(v[el.getAttribute('data-seo')] || '').replace(/\{site\}/g, v.siteName || '');
+        if (t) el.setAttribute('content', t);
       }
     })
     .on('[data-dl]', {
@@ -231,7 +261,11 @@ export function applyContent(rw, values, photos) {
       element(el) {
         const k = el.getAttribute('data-photo');
         const ver = photos[k];
-        if (!ver) return;
+        if (!ver) {
+          // 사진을 안 올린 칸은 숨김 (회색 빈칸이 보이지 않게)
+          el.setAttribute('hidden', '');
+          return;
+        }
         const f = FIELDS[k];
         const alt = [v.siteArea, v.siteName, f && f.alt ? f.alt : ''].filter(Boolean).join(' ');
         el.removeAttribute('hidden');

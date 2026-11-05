@@ -272,3 +272,23 @@ body.is-full .open-only { display: none; }
 .doc-table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 6px 0 10px; background: var(--card); }
 .doc-table th, .doc-table td { border: 1px solid var(--line); padding: 8px; text-align: left; vertical-align: top; }
 .doc-table th { background: var(--gray-bg); white-space: nowrap; }
+
+/* 버튼형 링크 (지도 · 리뷰 · 안내) */
+.map-btns { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: 8px; }
+.mbtn {
+  display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 48px; padding: 0 12px;
+  border: 1.5px solid var(--line-2); border-radius: 12px; background: var(--card); color: var(--ink);
+  font-size: 14px; font-weight: 700; text-decoration: none;
+}
+.mbtn:hover { border-color: var(--green); color: var(--green); }
+.mbtn svg { width: 18px; height: 18px; fill: none; stroke: var(--green); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.mbtn.wide { justify-content: flex-start; background: var(--green-bg); border-color: var(--green-bg); color: var(--green); }
+.mbtn.wide b { margin-left: auto; font-size: 20px; }
+.mbtn[hidden] { display: none; }
+.btn-sm { flex: none; align-self: flex-start; padding: 12px 18px; font-size: 15px; }
+.guide-intro { margin: 0; font-size: 16px; line-height: 1.7; }
+/* 대표 사진이 없을 때 소개 카드 위치 */
+.hero[hidden] + .intro { margin-top: 16px; }
+/* 맨 아래 링크 누르기 쉽게 */
+.foot a { display: inline-block; padding: 6px 2px; }
+.done .btn { width: 100%; flex: none; }

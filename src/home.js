@@ -3,7 +3,7 @@ import { getSetting } from './telegram.js';
 import { getBlogPosts } from './blog.js';
 
 // 서버가 채워 보내는 손님 화면 주소
-export const PAGES = ['/', '/apply', '/en', '/privacy'];
+export const PAGES = ['/', '/apply', '/en', '/guide', '/privacy'];
 /* 홈 화면: '모집 중 / 만실' 스위치에 맞춰 문구를 바꿔 보냅니다.
    - 스위치를 읽지 못하면 기본(모집 중) 화면이 그대로 나갑니다. */
 

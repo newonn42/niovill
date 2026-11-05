@@ -39,6 +39,8 @@
 | `public/admin/` | 관리자 화면 |
 | `src/content.js` | 수정 가능한 글·사진 목록과 기본값, 화면 채우기, `/media/키` 사진 전송 |
 | `public/en.html` | 영어 페이지 (영어 신청서 포함) |
+| `public/guide.html` | 주변 생활 안내 (/guide, 관리자에서 분류별 수정) |
+| `public/404.html` | 없는 주소 안내 |
 | `src/blog.js` | 네이버 블로그 RSS를 1시간마다 읽어 홈 '최근 소식' 3개 표시 (실패 시 숨김) |
 | `src/home.js` | 홈 화면 문구: 모집 중(기본) / 만실. 스위치를 못 읽으면 모집 중 화면 |
 | `migrations/` | 데이터베이스 표 만들기 (배포할 때 자동 실행) |
