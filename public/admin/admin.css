@@ -98,7 +98,7 @@ summary.a-link::-webkit-details-marker { display: none; }
 #contentForm .a-card { gap: 14px; }
 .a-photo { display: flex; flex-direction: column; gap: 8px; }
 .a-photo .label { font-size: 14px; font-weight: 700; }
-.a-photo-box { height: 150px; border-radius: 12px; background: var(--ph); display: flex; align-items: center; justify-content: center; color: var(--ink-2); font-size: 13px; overflow: hidden; }
+.a-photo-box { aspect-ratio: 4 / 5; width: 60%; max-width: 220px; border-radius: 12px; background: var(--ph); display: flex; align-items: center; justify-content: center; color: var(--ink-2); font-size: 13px; overflow: hidden; }
 .a-photo-box img { width: 100%; height: 100%; object-fit: cover; }
 .a-photo-btns { display: flex; gap: 8px; align-items: center; }
 .a-photo-btns label { cursor: pointer; }

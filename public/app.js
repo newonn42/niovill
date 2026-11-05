@@ -13,6 +13,38 @@
     });
   }
 
+  /* ── 사진 누르면 크게 보기 ── */
+  document.addEventListener('click', function (e) {
+    var img = e.target;
+    if (!img || img.tagName !== 'IMG' || !img.closest('.hero, .room-photo')) return;
+    var box = document.createElement('div');
+    box.className = 'zoom';
+    box.setAttribute('role', 'dialog');
+    box.setAttribute('aria-label', '사진 크게 보기');
+    var big = document.createElement('img');
+    big.src = img.src;
+    big.alt = img.alt;
+    var x = document.createElement('button');
+    x.type = 'button';
+    x.className = 'zoom-x';
+    x.setAttribute('aria-label', '닫기');
+    x.textContent = '✕';
+    box.appendChild(big);
+    box.appendChild(x);
+    function close() { box.remove(); document.removeEventListener('keydown', onKey); }
+    function onKey(ev) { if (ev.key === 'Escape') close(); }
+    box.addEventListener('click', close);
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(box);
+  });
+
+  /* ── 블로그 사진이 안 열리면 숨김 ── */
+  var blogImgs = document.querySelectorAll('img[data-blogimg]');
+  for (var b = 0; b < blogImgs.length; b++) {
+    blogImgs[b].addEventListener('error', function () { this.remove(); });
+    if (blogImgs[b].complete && blogImgs[b].naturalWidth === 0) blogImgs[b].remove();
+  }
+
   /* ── 신청서 ── */
   var form = document.getElementById('applyForm');
   if (!form) return;

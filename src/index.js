@@ -42,7 +42,13 @@ async function sitemap(request, env) {
     if (row && row.value.startsWith('https://')) origin = row.value;
   } catch (e) { /* 요청 주소 사용 */ }
   const pages = PAGES.filter((p) => p !== '/apply');
-  const today = new Date().toISOString().slice(0, 10);
+  let today = new Date().toISOString().slice(0, 10);
+  // 블로그 새 글 날짜를 홈 수정일로 (구글이 새 내용을 알아챔)
+  try {
+    const c = env.DB ? await env.DB.prepare("SELECT value FROM settings WHERE key = 'blog_cache'").first() : null;
+    const items = c ? (JSON.parse(c.value).items || []) : [];
+    if (items[0] && items[0].date) today = items[0].date;
+  } catch (e) { /* 오늘 날짜 */ }
   const xml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
     pages.map((p) => '  <url><loc>' + origin + p + '</loc><lastmod>' + today + '</lastmod></url>').join('\n') + '\n</urlset>\n';
   return new Response(xml, { headers: { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600' } });
@@ -54,7 +60,9 @@ export default {
     // 데이터를 쓰는 주소에서만 표 준비 (파일만 보내는 요청은 바로 통과)
     const dynamic = PAGES.includes(url.pathname) || url.pathname === '/sitemap.xml' || url.pathname.startsWith('/api/') || url.pathname.startsWith('/media/');
     if (dynamic) await ensureSchema(env.DB);
-    if (request.method === 'GET' && PAGES.includes(url.pathname)) return handleHome(request, env);
+    if (request.method === 'GET' && PAGES.includes(url.pathname)) return handleHome(request, env, ctx);
+    // 예전 지역 페이지 주소 → 홈 '오시는 길'
+    if (url.pathname.startsWith('/area/')) return Response.redirect(url.origin + '/#location', 301);
     if (request.method === 'GET' && url.pathname === '/sitemap.xml') return sitemap(request, env);
     if (request.method === 'GET' && url.pathname.startsWith('/media/')) return handleMedia(env, url.pathname.slice('/media/'.length));
     if (request.method === 'GET' && url.pathname === '/api/health') return health(env);
