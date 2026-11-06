@@ -10,8 +10,10 @@ export const GROUPS = [
       { key: 'siteName', label: '상호 (화면 위·아래에 표시)', type: 'text', max: 30, def: '니오빌원룸텔' },
       { key: 'siteArea', label: '상호 아래 작은 글씨', type: 'text', max: 30, def: '인천 계양구 계산동' },
       { key: 'phone', label: '전화번호 (전화 버튼)', type: 'tel', max: 20, def: '032-542-0066' },
+      { key: 'smsPhone', label: '문자 받을 휴대폰 번호 (문자 버튼)', type: 'tel', max: 20, emptyOk: true, def: '010-5872-6575', help: '비우면 문자 버튼이 안 보입니다' },
+      { key: 'smsText', label: '문자 첫 문장 (손님 문자창에 미리 써짐)', type: 'text', max: 60, emptyOk: true, def: '니오빌원룸텔 문의드립니다.' },
       { key: 'kakaoLink', label: '카카오톡 링크 (오픈채팅 또는 채널)', type: 'url', max: 200, def: 'https://open.kakao.com/o/s2f3yqRi' },
-      { key: 'blogUrl', label: '네이버 블로그 주소 (최근 소식 자동 표시)', type: 'url', max: 200, def: 'https://m.blog.naver.com/niovill_stay', help: '비워 두면 최근 소식이 안 보입니다' },
+      { key: 'blogUrl', label: '네이버 블로그 주소 (최근 소식 자동 표시)', type: 'url', max: 200, emptyOk: true, def: 'https://m.blog.naver.com/niovill_stay', help: '비워 두면 최근 소식이 안 보입니다' },
       { key: 'applyDone', label: '신청 완료 화면 안내 문구', type: 'text', max: 80, def: '늦은 시간에 접수된 신청은 다음 날 오전에 연락드립니다' },
       { key: 'privacyOfficer', label: '개인정보 보호책임자 (개인정보처리방침에 표시)', type: 'text', max: 20, def: '엄경환' },
       { key: 'bizInfo', label: '사업자 정보 (맨 아래)', type: 'text', max: 120, def: '대표 [이름] · 사업자등록번호 [000-00-00000]', help: '예: 대표 홍길동 · 사업자등록번호 123-45-67890' }
@@ -172,7 +174,9 @@ export async function loadContent(db) {
     if (f.type === 'photo') continue;
     const v = saved[f.key];
     // 비워 두면 기본값
-    values[f.key] = v === undefined || v === '' || (Array.isArray(v) && !v.length) ? f.def : v;
+    // 비워 두면 기본값. 단, '비우면 숨김' 칸(emptyOk)은 비운 그대로 둠
+    if (f.emptyOk && v === '') values[f.key] = '';
+    else values[f.key] = v === undefined || v === '' || (Array.isArray(v) && !v.length) ? f.def : v;
   }
   return { values, saved };
 }
@@ -294,6 +298,15 @@ export function applyContent(rw, values, photos) {
         const t = raw.replace(/\{site\}/g, v.siteName || '');
         if (el.tagName === 'title') el.setInnerContent(t);
         else el.setAttribute('content', t);
+      }
+    })
+    .on('[data-sms]', {
+      element(el) {
+        const digits = String(v.smsPhone || '').replace(/[^0-9+]/g, '');
+        if (!digits) { el.setAttribute('hidden', ''); return; }
+        // '?&body=' 는 아이폰·갤럭시 모두에서 첫 문장이 채워지는 형식
+        el.setAttribute('href', 'sms:' + digits + (v.smsText ? '?&body=' + encodeURIComponent(v.smsText) : ''));
+        el.removeAttribute('hidden');
       }
     })
     .on('[data-tel]', {
