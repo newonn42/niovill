@@ -100,7 +100,7 @@ export const GROUPS = [
     fields: [
       { key: 'priceRange', label: '가격대 (구글 검색 결과에 표시)', type: 'text', max: 40, def: '월 32만~40만 원' },
       { key: 'seoDesc', label: '검색 결과 설명 (구글·네이버에 보이는 2줄)', type: 'text', max: 160, def: '인천 계양구 계산동 니오빌원룸텔. 임학역 도보 9분, 계양구청 앞. 전 객실 개인 화장실, 쌀·라면·시리얼·원두커피 무료, 무료 주차. 24시간 상담 신청.' },
-      { key: 'googleVerify', label: '구글 서치콘솔 확인 코드', type: 'text', max: 100, def: '', help: '서치콘솔 → HTML 태그에서 content="…" 안의 글자만 붙여 넣기' },
+      { key: 'googleVerify', label: '구글 서치콘솔 확인 코드', type: 'text', max: 100, def: 'VCc-3AiZ5hV0ZCrBDw6s_c5rabNxqXhfld_1xS6u-QQ', help: '서치콘솔 → HTML 태그에서 content="…" 안의 글자만 붙여 넣기' },
       { key: 'naverVerify', label: '네이버 서치어드바이저 확인 코드', type: 'text', max: 100, def: '', help: '서치어드바이저 → HTML 태그에서 content="…" 안의 글자만 붙여 넣기' },
       { key: 'googleMap', label: '구글 지도 링크 (구글 비즈니스 프로필 → 공유)', type: 'url', max: 300, def: '', help: '비워 두면 버튼이 안 보입니다' },
       { key: 'googleReview', label: '구글 리뷰 보기 링크', type: 'url', max: 300, def: '', help: '비워 두면 버튼이 안 보입니다' },
