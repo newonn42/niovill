@@ -60,6 +60,11 @@ const SCHEMA = [
     data TEXT NOT NULL,
     updated_by TEXT,
     updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`,
+  `CREATE TABLE IF NOT EXISTS visits (
+    day TEXT PRIMARY KEY,
+    uv INTEGER NOT NULL DEFAULT 0,
+    pv INTEGER NOT NULL DEFAULT 0
   )`
 ];
 

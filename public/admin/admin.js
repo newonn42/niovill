@@ -115,6 +115,31 @@
       $('statusError').hidden = true;
       paintSwitch(r.full);
       $('lastChange').textContent = r.last ? '마지막 변경: ' + r.last.updated_by + ' · ' + r.last.at : '';
+    }).then(loadVisits);
+  }
+  /* ── 방문 통계 ── */
+  function loadVisits() {
+    return api('visits').then(function (r) {
+      if (!r || !r.ok) return;
+      var n = function (x) { return Number(x || 0).toLocaleString('ko-KR'); };
+      $('visitSince').textContent = r.since ? '(' + r.since.slice(5).replace('-', '/') + '부터)' : '(오늘부터 집계)';
+      var box = $('visitStats'); box.textContent = '';
+      [['오늘', r.today], ['어제', r.yesterday], ['이번 달', r.month], ['누적', r.all]].forEach(function (x) {
+        var c = el('div', 'v-stat'); c.appendChild(el('span', '', x[0])); c.appendChild(el('b', '', n(x[1].uv) + '명')); c.appendChild(el('small', '', '조회 ' + n(x[1].pv)));
+        box.appendChild(c);
+      });
+      var ch = $('visitChart'); ch.textContent = '';
+      var max = Math.max.apply(null, r.days.map(function (d) { return d.uv; }).concat([1]));
+      var shownMax = false;
+      r.days.forEach(function (d, i) {
+        var col = el('div', 'v-col'); col.title = d.day.slice(5).replace('-', '/') + ' · ' + d.uv + '명 · 조회 ' + d.pv;
+        var bar = el('i'); bar.style.height = Math.round(d.uv / max * 100) + '%'; if (i === r.days.length - 1) bar.className = 'on';
+        col.appendChild(bar);
+        if (d.uv && d.uv === max && !shownMax) { col.appendChild(el('em', '', String(d.uv))); shownMax = true; }
+        ch.appendChild(col);
+      });
+      var lab = el('div', 'v-lab'); lab.appendChild(el('span', '', r.days[0].day.slice(5).replace('-', '/'))); lab.appendChild(el('span', '', '오늘'));
+      ch.appendChild(lab);
     });
   }
   for (var w = 0; w < switchBtns.length; w++) {

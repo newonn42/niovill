@@ -4,6 +4,7 @@ import {
   sessionCookie, clearCookie, lockKey, lockedMinutes, recordFail, clearFails
 } from './auth.js';
 import { isFull } from './home.js';
+import { visitStats } from './visits.js';
 import { ROOM_TYPES, PERIODS } from './apply-api.js';
 import { TOKEN_RE, tgCall, getSetting, setSetting, getChats, sendToAll } from './telegram.js';
 import { getVapid, pushToAll, fromB64u } from './push.js';
@@ -460,6 +461,7 @@ export async function handleAdminApi(request, env, path) {
       const admin = await currentAdmin(env.DB, request);
       if (!admin) return fail('다시 로그인해 주세요', 401);
       if (path === 'status') return await statusGet(env);
+      if (path === 'visits') return json({ ok: true, ...(await visitStats(env.DB)) });
       if (path === 'inquiries') return await inquiriesGet(env, url);
       if (path === 'telegram') return await tgGet(env);
       if (path === 'push') return await pushGet(env, admin);

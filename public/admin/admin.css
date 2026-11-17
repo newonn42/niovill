@@ -108,3 +108,18 @@ summary.a-link::-webkit-details-marker { display: none; }
 .a-faq textarea { min-height: 70px; resize: vertical; }
 .a-savebar { position: sticky; bottom: 0; background: var(--bg); padding: 12px 16px calc(12px + env(safe-area-inset-bottom)); margin-top: 16px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 8px; z-index: 5; }
 .a-savebar .a-last { text-align: center; }
+
+/* 방문 통계 */
+.v-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.v-stat { border: 1px solid var(--line); border-radius: 12px; padding: 10px 4px; text-align: center; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.v-stat span { font-size: 12px; color: var(--muted); }
+.v-stat b { font-size: 18px; }
+.v-stat small { font-size: 11px; color: var(--muted); }
+.v-chart { position: relative; display: flex; align-items: flex-end; gap: 2px; height: 96px; padding: 14px 0 18px; }
+.v-col { position: relative; flex: 1; height: 100%; display: flex; align-items: flex-end; }
+.v-col i { display: block; width: 100%; min-height: 2px; background: var(--line); border-radius: 3px 3px 0 0; }
+.v-col i.on { background: var(--green); }
+.v-col:not(:last-child) i:not([style*="height: 0%"]) { background: #9DC3B2; }
+.v-col em { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); font-size: 10px; font-style: normal; color: var(--muted); }
+.v-lab { position: absolute; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+@media (max-width: 360px) { .v-stat b { font-size: 16px; } }

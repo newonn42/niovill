@@ -10,6 +10,7 @@ import { handleAdminApi } from './admin-api.js';
 import { handleApply } from './apply-api.js';
 import { ensureSchema } from './schema.js';
 import { handleMedia } from './content.js';
+import { visitOf, recordVisit, dayCookie } from './visits.js';
 
 async function health(env) {
   const body = { ok: true, db: false, full: false };
@@ -71,7 +72,17 @@ export default {
     // 데이터를 쓰는 주소에서만 표 준비 (파일만 보내는 요청은 바로 통과)
     const dynamic = PAGES.includes(url.pathname) || url.pathname === '/sitemap.xml' || url.pathname.startsWith('/api/') || url.pathname.startsWith('/media/');
     if (dynamic || url.pathname === '/robots.txt') await ensureSchema(env.DB);
-    if (request.method === 'GET' && PAGES.includes(url.pathname)) return handleHome(request, env, ctx);
+    if (request.method === 'GET' && PAGES.includes(url.pathname)) {
+      const res = await handleHome(request, env, ctx);
+      // 방문 통계 (화면이 정상으로 나갈 때만, 응답은 기다리지 않음)
+      const v = res.status === 200 && env.DB ? visitOf(request) : null;
+      if (!v) return res;
+      ctx.waitUntil(recordVisit(env.DB, v).catch((e) => console.log('visit count failed:', e && e.message)));
+      if (!v.unique) return res;
+      const h = new Headers(res.headers);
+      h.append('Set-Cookie', dayCookie(v, url.protocol === 'https:'));
+      return new Response(res.body, { status: res.status, headers: h });
+    }
     // 예전 지역 페이지 주소 → 홈 '오시는 길'
     if (url.pathname.startsWith('/area/')) return Response.redirect(url.origin + '/#location', 301);
     if (request.method === 'GET' && url.pathname === '/sitemap.xml') return sitemap(request, env);

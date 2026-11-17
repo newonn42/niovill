@@ -1,0 +1,6 @@
+-- 방문 통계 (하루 1줄: 방문자 수 · 조회수)
+CREATE TABLE IF NOT EXISTS visits (
+  day TEXT PRIMARY KEY,
+  uv INTEGER NOT NULL DEFAULT 0,
+  pv INTEGER NOT NULL DEFAULT 0
+);
