@@ -16,7 +16,7 @@ export const GROUPS = [
       { key: 'blogUrl', label: '네이버 블로그 주소 (최근 소식 자동 표시)', type: 'url', max: 200, emptyOk: true, def: 'https://m.blog.naver.com/niovill_stay', help: '비워 두면 최근 소식이 안 보입니다' },
       { key: 'applyDone', label: '신청 완료 화면 안내 문구', type: 'text', max: 80, def: '늦은 시간에 접수된 신청은 다음 날 오전에 연락드립니다' },
       { key: 'privacyOfficer', label: '개인정보 보호책임자 (개인정보처리방침에 표시)', type: 'text', max: 20, def: '엄경환' },
-      { key: 'bizInfo', label: '사업자 정보 (맨 아래)', type: 'text', max: 120, def: '대표 [이름] · 사업자등록번호 [000-00-00000]', help: '예: 대표 홍길동 · 사업자등록번호 123-45-67890' }
+      { key: 'bizInfo', label: '사업자 정보 (맨 아래)', type: 'text', max: 120, def: '', help: '예: 대표 홍길동 · 사업자등록번호 123-45-67890 (비워 두면 표시하지 않음)' }
     ]
   },
   {
@@ -62,7 +62,7 @@ export const GROUPS = [
     fields: [
       { key: 'infoMin', label: '최소 입실', type: 'text', max: 40, def: '1개월' },
       { key: 'infoRent', label: '월세', type: 'text', max: 40, def: '선불 · 매월 입실일 기준' },
-      { key: 'infoDeposit', label: '보증금', type: 'text', max: 40, def: '[보증금 안내]' },
+      { key: 'infoDeposit', label: '보증금', type: 'text', max: 40, def: '문의 주세요', help: '예: 5만원 (퇴실 시 반환)' },
       { key: 'infoFree', label: '무료 제공', type: 'text', max: 40, def: '쌀 · 라면 · 시리얼 · 원두커피' },
       { key: 'infoSecurity', label: '보안', type: 'text', max: 40, def: '모든 방 개별 도어락' }
     ]
@@ -206,6 +206,14 @@ export function applyContent(rw, values, photos) {
         } else if (k === 'phoneIntl') {
           const d = String(v.phone || '').replace(/[^0-9]/g, '');
           el.setInnerContent(d.startsWith('0') ? '+82-' + d.slice(1).replace(/^(\d{1,2})(\d{3,4})(\d{4})$/, '$1-$2-$3') : String(v.phone || ''));
+        } else if (k === 'infoDeposit') {
+          // 예시 문구([보증금 안내])가 그대로면 '문의 주세요'
+          const d = String(v.infoDeposit || '').trim();
+          el.setInnerContent(!d || /^\[.*\]$/.test(d) ? '문의 주세요' : d);
+        } else if (k === 'bizInfo') {
+          // 예시 문구([이름], 000-00-…)가 그대로면 숨김
+          const b = String(v.bizInfo || '');
+          el.setInnerContent(/\[|000-00-0000/.test(b) ? '' : b);
         } else if (Object.prototype.hasOwnProperty.call(v, k) && typeof v[k] === 'string') {
           el.setInnerContent(v[k]);
         }
